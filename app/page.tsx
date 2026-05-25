@@ -50,8 +50,10 @@ type Tag = "security" | "perf" | "style" | "good";
 
 type ReviewChunk =
   | { kind: "header"; file: string }
-  | { kind: "item"; tag: Tag; line?: number; body: string }
+  | { kind: "item"; tag: Tag; line?: number; body: string; file?: string }
   | { kind: "summary"; issues: number; suggestions: number; positives: number };
+
+type ReviewError = { code: string; message: string };
 
 type LangKey =
   | "typescript"
@@ -215,12 +217,15 @@ export default function Page() {
   const [chunks, setChunks] = useState<ReviewChunk[]>([]);
   const [elapsed, setElapsed] = useState<string>("—");
   const [copyLabel, setCopyLabel] = useState<string>("Copy");
+  const [error, setError] = useState<ReviewError | null>(null);
+  const [demoMode, setDemoMode] = useState<boolean>(false);
 
   const codeRef = useRef<HTMLTextAreaElement | null>(null);
   const prInputRef = useRef<HTMLInputElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
   const outputRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const startedAtRef = useRef<number>(0);
 
   /* derived */
@@ -240,8 +245,120 @@ export default function Page() {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
     setStatus("idle");
   }, []);
+
+  const nowMs = () =>
+    typeof performance !== "undefined" ? performance.now() : Date.now();
+
+  /** Pre-baked playback for `?demo=1` (screenshots, offline demos). */
+  const runDemoStream = useCallback(() => {
+    let i = 0;
+    const tick = () => {
+      if (i >= REVIEW.length) {
+        setStatus("idle");
+        setElapsed(`done in ${((nowMs() - startedAtRef.current) / 1000).toFixed(1)}s`);
+        return;
+      }
+      setChunks((prev) => [...prev, REVIEW[i]]);
+      i++;
+      timerRef.current = setTimeout(
+        tick,
+        i === 1 ? 380 : 520 + Math.random() * 220,
+      );
+    };
+    tick();
+  }, []);
+
+  /** Real review via POST /api/review (SSE). */
+  const runRealStream = useCallback(async () => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    try {
+      const res = await fetch("/api/review", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          code,
+          language: detectLang(code),
+          source: "paste",
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        let payload: { error?: ReviewError } = {};
+        try {
+          payload = (await res.json()) as { error?: ReviewError };
+        } catch {
+          /* not JSON */
+        }
+        setError(
+          payload.error ?? {
+            code: "http_error",
+            message: `Request failed (${res.status})`,
+          },
+        );
+        setStatus("idle");
+        return;
+      }
+
+      // SSE: frames are separated by \n\n; each frame has `event:` and `data:` lines.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        let sepIdx: number;
+        while ((sepIdx = buf.indexOf("\n\n")) !== -1) {
+          const frame = buf.slice(0, sepIdx);
+          buf = buf.slice(sepIdx + 2);
+          handleSseFrame(frame);
+        }
+      }
+      setStatus("idle");
+      setElapsed(`done in ${((nowMs() - startedAtRef.current) / 1000).toFixed(1)}s`);
+    } catch (err) {
+      if (controller.signal.aborted) return; // user-initiated cancel — silent
+      setError({
+        code: "network",
+        message: err instanceof Error ? err.message : "Network error",
+      });
+      setStatus("idle");
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
+    }
+
+    function handleSseFrame(frame: string) {
+      let event = "message";
+      let data = "";
+      for (const line of frame.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) data += line.slice(5).trim();
+      }
+      if (!data) return;
+      let payload: unknown;
+      try {
+        payload = JSON.parse(data);
+      } catch {
+        return;
+      }
+      if (event === "chunk") {
+        setChunks((prev) => [...prev, payload as ReviewChunk]);
+      } else if (event === "error") {
+        setError(payload as ReviewError);
+      }
+      // `status` and `done` events are handled implicitly by the loop terminator.
+    }
+  }, [code]);
 
   const startReview = useCallback(() => {
     if (!code.trim()) {
@@ -250,35 +367,21 @@ export default function Page() {
     }
     stopStream();
     setChunks([]);
+    setError(null);
     setStatus("reviewing");
-    startedAtRef.current =
-      typeof performance !== "undefined" ? performance.now() : Date.now();
-
-    let i = 0;
-    const tick = () => {
-      if (i >= REVIEW.length) {
-        setStatus("idle");
-        const now =
-          typeof performance !== "undefined" ? performance.now() : Date.now();
-        const ms = Math.round(now - startedAtRef.current);
-        setElapsed(`done in ${(ms / 1000).toFixed(1)}s`);
-        return;
-      }
-      const chunk = REVIEW[i];
-      setChunks((prev) => [...prev, chunk]);
-      i++;
-      timerRef.current = setTimeout(
-        tick,
-        i === 1 ? 380 : 520 + Math.random() * 220,
-      );
-    };
-    tick();
-  }, [code, stopStream]);
+    startedAtRef.current = nowMs();
+    if (demoMode) {
+      runDemoStream();
+    } else {
+      void runRealStream();
+    }
+  }, [code, demoMode, runDemoStream, runRealStream, stopStream]);
 
   const onClear = useCallback(() => {
     setCode("");
     setChunks([]);
     setElapsed("—");
+    setError(null);
     stopStream();
     codeRef.current?.focus();
   }, [stopStream]);
@@ -325,14 +428,29 @@ export default function Page() {
     return () => window.removeEventListener("keydown", onKey);
   }, [startReview, onClear]);
 
-  /* auto-run once on first mount */
+  /* Detect demo mode from `?demo=1` once on mount. Real reviews must NOT
+     auto-fire — every page load would burn an Anthropic request. */
   useEffect(() => {
-    const id = setTimeout(startReview, 450);
-    return () => {
-      clearTimeout(id);
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+    if (typeof window === "undefined") return;
+    setDemoMode(
+      new URL(window.location.href).searchParams.get("demo") === "1",
+    );
+  }, []);
+
+  /* Auto-run only in demo mode. */
+  useEffect(() => {
+    if (!demoMode) return;
+    const id = setTimeout(() => startReview(), 450);
+    return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoMode]);
+
+  /* Tear down any in-flight stream on unmount. */
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (abortRef.current) abortRef.current.abort();
+    };
   }, []);
 
   /* keep output scrolled to bottom while streaming */
@@ -494,7 +612,7 @@ export default function Page() {
             ref={outputRef}
             className="overflow-auto px-4 pt-[14px] pb-[18px] text-[13px] leading-[1.65] whitespace-pre-wrap break-words"
           >
-            {chunks.length === 0 ? (
+            {chunks.length === 0 && !error ? (
               <div className="text-[#6C7280] text-[12.5px] leading-[1.8] space-y-1">
                 <div>
                   <span className="text-[#50FA7B]">→</span> Paste a file in the
@@ -511,7 +629,12 @@ export default function Page() {
                 </div>
               </div>
             ) : (
-              chunks.map((c, i) => <ChunkView key={i} chunk={c} />)
+              <>
+                {chunks.map((c, i) => (
+                  <ChunkView key={i} chunk={c} />
+                ))}
+                {error && <ErrorBanner error={error} />}
+              </>
             )}
           </div>
 
@@ -695,5 +818,22 @@ function Dot({ color }: { color: string }) {
       className="inline-block w-[6px] h-[6px] mr-[6px] align-middle"
       style={{ background: color }}
     />
+  );
+}
+
+function ErrorBanner({ error }: { error: ReviewError }) {
+  return (
+    <div
+      className="grid gap-[10px] mb-3 mt-3 border-l-2 border-[#FF5555] pl-[10px] py-[2px]"
+      style={{ gridTemplateColumns: "92px 1fr" }}
+      role="alert"
+    >
+      <span className="font-semibold tracking-[0.02em] text-[#FF5555]">
+        [ERROR]
+      </span>
+      <span className="text-[#F8F8F2]">
+        <span className="text-[#8A8F98]">{error.code}</span> — {error.message}
+      </span>
+    </div>
   );
 }
