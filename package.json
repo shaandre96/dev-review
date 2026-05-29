@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "biome check .",
+    "format": "biome check --write ."
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
@@ -14,6 +16,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.0.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

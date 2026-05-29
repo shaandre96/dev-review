@@ -19,12 +19,12 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import {
+  buildUserMessage,
   EFFORT,
   MODEL_ID,
+  type ReviewTag,
   SYSTEM_PROMPT,
   TOOLS,
-  buildUserMessage,
-  type ReviewTag,
 } from "./prompt";
 
 let _client: Anthropic | null = null;
@@ -176,11 +176,11 @@ function normaliseToolCall(
 }
 
 function isReviewTag(v: unknown): v is ReviewTag {
-  return (
-    v === "security" || v === "perf" || v === "style" || v === "good"
-  );
+  return v === "security" || v === "perf" || v === "style" || v === "good";
 }
 
 function toInt(v: unknown): number {
-  return typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+  return typeof v === "number" && Number.isFinite(v)
+    ? Math.max(0, Math.floor(v))
+    : 0;
 }

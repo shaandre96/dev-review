@@ -14,7 +14,14 @@
  */
 
 import type { NextRequest } from "next/server";
-import { Anthropic, streamReview, type ReviewChunk } from "@/lib/anthropic";
+import { Anthropic, type ReviewChunk, streamReview } from "@/lib/anthropic";
+import {
+  fetchPrDiff,
+  GitHubError,
+  type PrRef,
+  parsePrUrl,
+  splitDiffByFile,
+} from "@/lib/github";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,11 +33,59 @@ type ReviewRequest = {
   language?: string;
   file?: string;
   source?: "paste" | "pr";
+  /** GitHub PR URL, used when source === "pr". */
+  prUrl?: string;
+  /** Optional user-supplied GitHub token for private-repo PRs. Never stored. */
+  token?: string;
 };
 
 /** Hard cap on inbound code size. Prevents accidental 5 MB pastes from
  *  hitting the model. Tier-aware caps land in Phase 2. */
 const MAX_CODE_BYTES = 100_000;
+
+/** Byte budget for a fetched PR diff. Files are included until this is hit,
+ *  so a huge PR reviews its first files rather than blowing up the model call. */
+const MAX_PR_BYTES = 100_000;
+
+/**
+ * Trim a unified diff to the byte budget by dropping whole files once the
+ * budget is exhausted (at least one file is always kept). Returns the combined
+ * patch plus a header string describing what was reviewed.
+ */
+function budgetPrDiff(
+  diff: string,
+  ref: PrRef,
+): { combined: string; header: string } {
+  const files = splitDiffByFile(diff);
+  if (files.length === 0) {
+    throw new GitHubError(
+      "empty_diff",
+      "This PR has no reviewable file changes.",
+    );
+  }
+
+  const kept: string[] = [];
+  let used = 0;
+  let skipped = 0;
+  for (const f of files) {
+    const size = Buffer.byteLength(f.patch, "utf8");
+    if (kept.length > 0 && used + size > MAX_PR_BYTES) {
+      skipped++;
+      continue;
+    }
+    kept.push(f.patch);
+    used += size;
+  }
+
+  const slug = `${ref.owner}/${ref.repo} #${ref.number}`;
+  const n = kept.length;
+  const header =
+    skipped > 0
+      ? `${slug} — ${n} file${n === 1 ? "" : "s"} (${skipped} skipped, diff too large)`
+      : `${slug} — ${n} file${n === 1 ? "" : "s"}`;
+
+  return { combined: kept.join("\n\n"), header };
+}
 
 export async function POST(req: NextRequest) {
   let body: ReviewRequest;
@@ -40,18 +95,6 @@ export async function POST(req: NextRequest) {
     return jsonError(400, "invalid_json", "Request body is not valid JSON.");
   }
 
-  const code = body.code?.trim();
-  if (!code) {
-    return jsonError(400, "missing_code", "Missing 'code' in request body.");
-  }
-  if (Buffer.byteLength(code, "utf8") > MAX_CODE_BYTES) {
-    return jsonError(
-      413,
-      "code_too_large",
-      `Code exceeds the ${MAX_CODE_BYTES / 1000} KB cap for a single review.`,
-    );
-  }
-
   if (!process.env.ANTHROPIC_API_KEY) {
     return jsonError(
       500,
@@ -59,6 +102,46 @@ export async function POST(req: NextRequest) {
       "ANTHROPIC_API_KEY is not configured on the server.",
     );
   }
+
+  const source = body.source === "pr" ? "pr" : "paste";
+
+  // Validate inputs synchronously so obvious mistakes return a plain 400
+  // instead of opening an SSE stream just to emit a single error frame.
+  let prRef: PrRef | null = null;
+  let code = "";
+  if (source === "pr") {
+    const prUrl = body.prUrl?.trim();
+    if (!prUrl) {
+      return jsonError(
+        400,
+        "missing_pr_url",
+        "Missing 'prUrl' in request body.",
+      );
+    }
+    try {
+      prRef = parsePrUrl(prUrl);
+    } catch (err) {
+      if (err instanceof GitHubError)
+        return jsonError(400, err.code, err.message);
+      throw err;
+    }
+  } else {
+    code = body.code?.trim() ?? "";
+    if (!code) {
+      return jsonError(400, "missing_code", "Missing 'code' in request body.");
+    }
+    if (Buffer.byteLength(code, "utf8") > MAX_CODE_BYTES) {
+      return jsonError(
+        413,
+        "code_too_large",
+        `Code exceeds the ${MAX_CODE_BYTES / 1000} KB cap for a single review.`,
+      );
+    }
+  }
+
+  // Read per-request and used only to authenticate the GitHub fetch below.
+  // Never logged, persisted, or forwarded to Anthropic.
+  const token = body.token?.trim() || undefined;
 
   const encoder = new TextEncoder();
   const abort = new AbortController();
@@ -79,13 +162,29 @@ export async function POST(req: NextRequest) {
       send("status", { state: "reviewing" });
 
       try {
-        for await (const chunk of streamReview({
-          code,
-          language: body.language,
-          file: body.file,
-          signal: abort.signal,
-        })) {
-          send("chunk", chunk satisfies ReviewChunk);
+        if (prRef) {
+          const diff = await fetchPrDiff(prRef, {
+            token,
+            signal: abort.signal,
+          });
+          const { combined, header } = budgetPrDiff(diff, prRef);
+          send("chunk", { kind: "header", file: header } satisfies ReviewChunk);
+          for await (const chunk of streamReview({
+            code: combined,
+            language: "diff",
+            signal: abort.signal,
+          })) {
+            send("chunk", chunk satisfies ReviewChunk);
+          }
+        } else {
+          for await (const chunk of streamReview({
+            code,
+            language: body.language,
+            file: body.file,
+            signal: abort.signal,
+          })) {
+            send("chunk", chunk satisfies ReviewChunk);
+          }
         }
         send("status", { state: "idle" });
         send("done", { ok: true });
@@ -124,6 +223,14 @@ function jsonError(status: number, code: string, message: string) {
 }
 
 function classifyError(err: unknown): { code: string; message: string } {
+  // GitHub fetch failures already carry a friendly code + message.
+  if (err instanceof GitHubError) {
+    return { code: err.code, message: err.message };
+  }
+  // Aborted GitHub fetch (client disconnected before/while fetching the diff).
+  if (err instanceof Error && err.name === "AbortError") {
+    return { code: "aborted", message: "Review cancelled." };
+  }
   // Check APIUserAbortError first (extends APIError but isn't a status error).
   if (err instanceof Anthropic.APIUserAbortError) {
     return { code: "aborted", message: "Review cancelled." };

@@ -34,12 +34,12 @@
  */
 
 import {
+  type KeyboardEvent,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type KeyboardEvent,
 } from "react";
 
 /* ---------------------------------------------------------------- types ---- */
@@ -180,7 +180,11 @@ const LANG_BADGE: Record<LangKey, { label: string; cls: string }> = {
 function detectLang(t: string): LangKey {
   if (!t.trim()) return "plaintext";
   // TS/JS first — `import type {...}` is TypeScript, not Python.
-  if (/:\s*\w+(\[\]|<.*>)?\s*[=;)]|interface\s+\w+|type\s+\w+\s*=|import\s+type\b/.test(t))
+  if (
+    /:\s*\w+(\[\]|<.*>)?\s*[=;)]|interface\s+\w+|type\s+\w+\s*=|import\s+type\b/.test(
+      t,
+    )
+  )
     return "typescript";
   if (/\bdef\s+\w+\(|^\s*from\s+\w[\w.]*\s+import\b|print\(/m.test(t))
     return "python";
@@ -196,15 +200,24 @@ function renderBody(body: string) {
   return parts.map((p, i) =>
     p.startsWith("`") && p.endsWith("`") ? (
       <code
+        // biome-ignore lint/suspicious/noArrayIndexKey: parts come from a stable split and never reorder
         key={i}
         className="bg-[#1E1E1E] border border-[#1F1F1F] rounded-[2px] px-[4px] text-[#C8CCD2]"
       >
         {p.slice(1, -1)}
       </code>
     ) : (
+      // biome-ignore lint/suspicious/noArrayIndexKey: parts come from a stable split and never reorder
       <span key={i}>{p}</span>
     ),
   );
+}
+
+/** High-resolution timestamp in ms; falls back to Date.now() when
+ *  `performance` is unavailable (SSR). Module-scoped so it's a stable
+ *  reference and never needs to appear in a hook dependency array. */
+function nowMs(): number {
+  return typeof performance !== "undefined" ? performance.now() : Date.now();
 }
 
 /* ----------------------------------------------------------------- page ---- */
@@ -213,6 +226,9 @@ export default function Page() {
   const [tab, setTab] = useState<Tab>("paste");
   const [code, setCode] = useState<string>(SAMPLE);
   const [prUrl, setPrUrl] = useState<string>("");
+  // GitHub token for private-repo PRs. Kept in component memory only — never
+  // persisted to localStorage/cookies, and cleared on Clear.
+  const [token, setToken] = useState<string>("");
   const [status, setStatus] = useState<Status>("idle");
   const [chunks, setChunks] = useState<ReviewChunk[]>([]);
   const [elapsed, setElapsed] = useState<string>("—");
@@ -252,16 +268,15 @@ export default function Page() {
     setStatus("idle");
   }, []);
 
-  const nowMs = () =>
-    typeof performance !== "undefined" ? performance.now() : Date.now();
-
   /** Pre-baked playback for `?demo=1` (screenshots, offline demos). */
   const runDemoStream = useCallback(() => {
     let i = 0;
     const tick = () => {
       if (i >= REVIEW.length) {
         setStatus("idle");
-        setElapsed(`done in ${((nowMs() - startedAtRef.current) / 1000).toFixed(1)}s`);
+        setElapsed(
+          `done in ${((nowMs() - startedAtRef.current) / 1000).toFixed(1)}s`,
+        );
         return;
       }
       setChunks((prev) => [...prev, REVIEW[i]]);
@@ -274,94 +289,101 @@ export default function Page() {
     tick();
   }, []);
 
-  /** Real review via POST /api/review (SSE). */
-  const runRealStream = useCallback(async () => {
-    const controller = new AbortController();
-    abortRef.current = controller;
-    try {
-      const res = await fetch("/api/review", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          code,
-          language: detectLang(code),
-          source: "paste",
-        }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok || !res.body) {
-        let payload: { error?: ReviewError } = {};
-        try {
-          payload = (await res.json()) as { error?: ReviewError };
-        } catch {
-          /* not JSON */
-        }
-        setError(
-          payload.error ?? {
-            code: "http_error",
-            message: `Request failed (${res.status})`,
-          },
-        );
-        setStatus("idle");
-        return;
-      }
-
-      // SSE: frames are separated by \n\n; each frame has `event:` and `data:` lines.
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-
-        let sepIdx: number;
-        while ((sepIdx = buf.indexOf("\n\n")) !== -1) {
-          const frame = buf.slice(0, sepIdx);
-          buf = buf.slice(sepIdx + 2);
-          handleSseFrame(frame);
-        }
-      }
-      setStatus("idle");
-      setElapsed(`done in ${((nowMs() - startedAtRef.current) / 1000).toFixed(1)}s`);
-    } catch (err) {
-      if (controller.signal.aborted) return; // user-initiated cancel — silent
-      setError({
-        code: "network",
-        message: err instanceof Error ? err.message : "Network error",
-      });
-      setStatus("idle");
-    } finally {
-      if (abortRef.current === controller) abortRef.current = null;
-    }
-
-    function handleSseFrame(frame: string) {
-      let event = "message";
-      let data = "";
-      for (const line of frame.split("\n")) {
-        if (line.startsWith("event:")) event = line.slice(6).trim();
-        else if (line.startsWith("data:")) data += line.slice(5).trim();
-      }
-      if (!data) return;
-      let payload: unknown;
+  /** Real review via POST /api/review (SSE). Payload is built by the caller. */
+  const runRealStream = useCallback(
+    async (payload: Record<string, unknown>) => {
+      const controller = new AbortController();
+      abortRef.current = controller;
       try {
-        payload = JSON.parse(data);
-      } catch {
-        return;
+        const res = await fetch("/api/review", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+
+        if (!res.ok || !res.body) {
+          let payload: { error?: ReviewError } = {};
+          try {
+            payload = (await res.json()) as { error?: ReviewError };
+          } catch {
+            /* not JSON */
+          }
+          setError(
+            payload.error ?? {
+              code: "http_error",
+              message: `Request failed (${res.status})`,
+            },
+          );
+          setStatus("idle");
+          return;
+        }
+
+        // SSE: frames are separated by \n\n; each frame has `event:` and `data:` lines.
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+
+          let sepIdx = buf.indexOf("\n\n");
+          while (sepIdx !== -1) {
+            const frame = buf.slice(0, sepIdx);
+            buf = buf.slice(sepIdx + 2);
+            handleSseFrame(frame);
+            sepIdx = buf.indexOf("\n\n");
+          }
+        }
+        setStatus("idle");
+        setElapsed(
+          `done in ${((nowMs() - startedAtRef.current) / 1000).toFixed(1)}s`,
+        );
+      } catch (err) {
+        if (controller.signal.aborted) return; // user-initiated cancel — silent
+        setError({
+          code: "network",
+          message: err instanceof Error ? err.message : "Network error",
+        });
+        setStatus("idle");
+      } finally {
+        if (abortRef.current === controller) abortRef.current = null;
       }
-      if (event === "chunk") {
-        setChunks((prev) => [...prev, payload as ReviewChunk]);
-      } else if (event === "error") {
-        setError(payload as ReviewError);
+
+      function handleSseFrame(frame: string) {
+        let event = "message";
+        let data = "";
+        for (const line of frame.split("\n")) {
+          if (line.startsWith("event:")) event = line.slice(6).trim();
+          else if (line.startsWith("data:")) data += line.slice(5).trim();
+        }
+        if (!data) return;
+        let payload: unknown;
+        try {
+          payload = JSON.parse(data);
+        } catch {
+          return;
+        }
+        if (event === "chunk") {
+          setChunks((prev) => [...prev, payload as ReviewChunk]);
+        } else if (event === "error") {
+          setError(payload as ReviewError);
+        }
+        // `status` and `done` events are handled implicitly by the loop terminator.
       }
-      // `status` and `done` events are handled implicitly by the loop terminator.
-    }
-  }, [code]);
+    },
+    [],
+  );
 
   const startReview = useCallback(() => {
-    if (!code.trim()) {
+    if (tab === "pr") {
+      if (!prUrl.trim()) {
+        prInputRef.current?.focus();
+        return;
+      }
+    } else if (!code.trim()) {
       codeRef.current?.focus();
       return;
     }
@@ -372,13 +394,33 @@ export default function Page() {
     startedAtRef.current = nowMs();
     if (demoMode) {
       runDemoStream();
+    } else if (tab === "pr") {
+      void runRealStream({
+        source: "pr",
+        prUrl: prUrl.trim(),
+        token: token.trim() || undefined,
+      });
     } else {
-      void runRealStream();
+      void runRealStream({
+        source: "paste",
+        code,
+        language: detectLang(code),
+      });
     }
-  }, [code, demoMode, runDemoStream, runRealStream, stopStream]);
+  }, [
+    tab,
+    code,
+    prUrl,
+    token,
+    demoMode,
+    runDemoStream,
+    runRealStream,
+    stopStream,
+  ]);
 
   const onClear = useCallback(() => {
     setCode("");
+    setToken(""); // drop any entered token — don't retain it across reviews
     setChunks([]);
     setElapsed("—");
     setError(null);
@@ -398,15 +440,10 @@ export default function Page() {
     }
   }, []);
 
+  // Fetch + review the PR. startReview handles empty-input focus and routing.
   const onFetchPr = useCallback(() => {
-    if (!prUrl.trim()) {
-      prInputRef.current?.focus();
-      return;
-    }
-    setTab("paste");
-    setCode(SAMPLE);
-    setTimeout(startReview, 200);
-  }, [prUrl, startReview]);
+    startReview();
+  }, [startReview]);
 
   /* ---------- keyboard ---------- */
   useEffect(() => {
@@ -432,17 +469,16 @@ export default function Page() {
      auto-fire — every page load would burn an Anthropic request. */
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setDemoMode(
-      new URL(window.location.href).searchParams.get("demo") === "1",
-    );
+    setDemoMode(new URL(window.location.href).searchParams.get("demo") === "1");
   }, []);
 
-  /* Auto-run only in demo mode. */
+  /* Auto-run only in demo mode. Keyed on demoMode alone on purpose — we don't
+     want this to re-fire when startReview's identity changes. */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs only when demo mode turns on, not on every startReview change
   useEffect(() => {
     if (!demoMode) return;
     const id = setTimeout(() => startReview(), 450);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoMode]);
 
   /* Tear down any in-flight stream on unmount. */
@@ -454,6 +490,7 @@ export default function Page() {
   }, []);
 
   /* keep output scrolled to bottom while streaming */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: chunks is a dep on purpose so each newly streamed chunk re-triggers the scroll
   useEffect(() => {
     if (status === "reviewing" && outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
@@ -489,7 +526,7 @@ export default function Page() {
           dev<span className="font-normal text-[#6C7280]">·</span>review
         </div>
 
-        <nav
+        <div
           role="tablist"
           aria-label="Input mode"
           className="inline-flex items-center border border-[#2A2A2A] bg-[#161616]"
@@ -501,7 +538,7 @@ export default function Page() {
           <TabButton active={tab === "pr"} onClick={() => setTab("pr")}>
             GitHub PR URL
           </TabButton>
-        </nav>
+        </div>
 
         <div className="justify-self-end inline-flex items-center gap-2 text-[#6C7280] text-[11.5px]">
           <StatusDot reviewing={isReviewing} />
@@ -512,7 +549,8 @@ export default function Page() {
       {/* MAIN */}
       <main className="grid grid-cols-2 min-h-0">
         {/* LEFT PANE */}
-        <section className="bg-[#161616] grid min-h-0 min-w-0 border-r border-[#2A2A2A]"
+        <section
+          className="bg-[#161616] grid min-h-0 min-w-0 border-r border-[#2A2A2A]"
           style={{ gridTemplateRows: "36px 1fr 32px" }}
         >
           <PaneHead>
@@ -531,7 +569,10 @@ export default function Page() {
           </PaneHead>
 
           {tab === "paste" ? (
-            <div className="grid min-h-0 overflow-hidden" style={{ gridTemplateColumns: "48px 1fr" }}>
+            <div
+              className="grid min-h-0 overflow-hidden"
+              style={{ gridTemplateColumns: "48px 1fr" }}
+            >
               <div
                 ref={gutterRef}
                 className="bg-[#161616] border-r border-[#1F1F1F] text-[#3F4148] text-[12px] text-right pr-2 pt-[10px] select-none overflow-hidden whitespace-pre leading-[1.55]"
@@ -553,37 +594,85 @@ export default function Page() {
               />
             </div>
           ) : (
-            <div className="flex flex-col gap-[14px] p-6">
-              <div className="text-[#6C7280] text-[11.5px]">
-                github pull request url
+            <div className="flex flex-col gap-[14px] p-6 overflow-auto">
+              <div>
+                <div className="text-[#6C7280] text-[11.5px] mb-[6px]">
+                  github pull request url
+                </div>
+                <div className="grid grid-cols-[1fr_auto] border border-[#2A2A2A] bg-[#0D0D0D]">
+                  <input
+                    ref={prInputRef}
+                    value={prUrl}
+                    onChange={(e) => setPrUrl(e.target.value)}
+                    onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                      if (e.key === "Enter") onFetchPr();
+                    }}
+                    placeholder="https://github.com/org/repo/pull/1234"
+                    className="px-3 py-[10px] bg-transparent text-[#F8F8F2] text-[13px] outline-none placeholder-[#3D4046]"
+                  />
+                  <button
+                    type="button"
+                    onClick={onFetchPr}
+                    className="px-[14px] border-l border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12px]"
+                  >
+                    Fetch diff
+                  </button>
+                </div>
               </div>
-              <div className="grid grid-cols-[1fr_auto] border border-[#2A2A2A] bg-[#0D0D0D]">
+
+              <div>
+                <div className="text-[#6C7280] text-[11.5px] mb-[6px]">
+                  github token{" "}
+                  <span className="text-[#4A4D54]">
+                    — optional, only for private repos
+                  </span>
+                </div>
                 <input
-                  ref={prInputRef}
-                  value={prUrl}
-                  onChange={(e) => setPrUrl(e.target.value)}
+                  type="password"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
                   onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
                     if (e.key === "Enter") onFetchPr();
                   }}
-                  placeholder="https://github.com/org/repo/pull/1234"
-                  className="px-3 py-[10px] bg-transparent text-[#F8F8F2] text-[13px] outline-none placeholder-[#3D4046]"
+                  placeholder="ghp_…  (leave blank for public repos)"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  className="w-full px-3 py-[10px] border border-[#2A2A2A] bg-[#0D0D0D] text-[#F8F8F2] text-[13px] outline-none placeholder-[#3D4046]"
                 />
-                <button
-                  onClick={onFetchPr}
-                  className="px-[14px] border-l border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12px]"
-                >
-                  Fetch diff
-                </button>
               </div>
+
+              {/* Privacy: token handling. */}
+              <div className="border-l-2 border-[#FFB86C] pl-[10px] text-[11.5px] leading-[1.7] text-[#8A8F98]">
+                <div className="text-[#FFB86C] font-semibold mb-[2px]">
+                  privacy
+                </div>
+                Your token is sent to our server only to fetch this diff from
+                GitHub, then discarded. It is never stored, logged, written to
+                your browser, or sent to the model. Prefer a fine-grained,
+                read-only, short-lived token.{" "}
+                <a
+                  href="/privacy"
+                  className="text-[#B6BAC1] underline hover:text-[#F8F8F2]"
+                >
+                  Privacy policy →
+                </a>
+              </div>
+
+              {/* No-caching disclosure. */}
+              <div className="border-l-2 border-[#2A2A2A] pl-[10px] text-[11.5px] leading-[1.7] text-[#6C7280]">
+                <div className="text-[#8A8F98] font-semibold mb-[2px]">
+                  heads up
+                </div>
+                Nothing is cached. Every run fetches a fresh diff and recomputes
+                the review from scratch, so it may take a few seconds and
+                repeating the same request won&apos;t return instantly.
+              </div>
+
               <div className="text-[#6C7280] text-[11.5px] leading-[1.7]">
-                DevReview fetches the unified diff, splits hunks by file,
-                <br />
-                and reviews each touched file in sequence.
-                <br />
-                <br />
-                <span className="text-[#B6BAC1]">
-                  → supports public repos and authorised private repos
-                </span>
+                DevReview fetches the PR&apos;s unified diff and reviews the
+                changed files, attributing each finding to its file.
               </div>
             </div>
           )}
@@ -598,7 +687,8 @@ export default function Page() {
         </section>
 
         {/* RIGHT PANE */}
-        <section className="bg-[#161616] grid min-h-0 min-w-0"
+        <section
+          className="bg-[#161616] grid min-h-0 min-w-0"
           style={{ gridTemplateRows: "36px 1fr 32px" }}
         >
           <PaneHead>
@@ -627,10 +717,15 @@ export default function Page() {
                   <span className="text-[#50FA7B]">→</span> Output streams here
                   line by line.
                 </div>
+                <div>
+                  <span className="text-[#50FA7B]">→</span> Nothing is cached —
+                  each review runs fresh, so give it a few seconds.
+                </div>
               </div>
             ) : (
               <>
                 {chunks.map((c, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: review output is append-only and never reorders
                   <ChunkView key={i} chunk={c} />
                 ))}
                 {error && <ErrorBanner error={error} />}
@@ -647,9 +742,20 @@ export default function Page() {
 
       {/* BOTTOM BAR */}
       <footer className="flex justify-between items-center px-[14px] border-t border-[#2A2A2A] bg-[#0D0D0D] text-[#6C7280] text-[11px]">
-        <span>Powered by Claude</span>
+        <span className="inline-flex items-center gap-[8px]">
+          Powered by Claude
+          <span className="text-[#2A2A2A]">·</span>
+          <a
+            href="/privacy"
+            className="text-[#6C7280] hover:text-[#F8F8F2] transition-colors no-underline"
+          >
+            Privacy
+          </a>
+        </span>
         <a
-          href="#"
+          href="https://github.com/shaandre96/dev-review"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-[6px] text-[#6C7280] hover:text-[#F8F8F2] transition-colors no-underline"
         >
           <svg
@@ -658,6 +764,7 @@ export default function Page() {
             className="w-[12px] h-[12px] block"
             aria-hidden
           >
+            <title>GitHub</title>
             <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.81.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.67.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.13 0 0 .67-.21 2.2.82a7.66 7.66 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.11.16 1.93.08 2.13.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
           </svg>
           View source
@@ -697,6 +804,7 @@ function TabButton({
 }) {
   return (
     <button
+      type="button"
       role="tab"
       aria-selected={active}
       onClick={onClick}
@@ -748,6 +856,7 @@ function GhostBtn({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className="text-[#8A8F98] hover:text-[#F8F8F2] transition-colors py-1 text-[11.5px] cursor-pointer"
     >
@@ -779,15 +888,20 @@ function ChunkView({ chunk }: { chunk: ReviewChunk }) {
         className="grid gap-[10px] mb-3"
         style={{ gridTemplateColumns: "92px 1fr" }}
       >
-        <span className={`font-semibold tracking-[0.02em] ${TAG_COLOR[chunk.tag]}`}>
+        <span
+          className={`font-semibold tracking-[0.02em] ${TAG_COLOR[chunk.tag]}`}
+        >
           [{chunk.tag.toUpperCase()}]
         </span>
         <span className="text-[#F8F8F2]">
-          {chunk.line !== undefined && (
-            <>
-              <span className="text-[#8A8F98]">Line {chunk.line}</span> —{" "}
-            </>
-          )}
+          {chunk.file ? (
+            <span className="text-[#8A8F98]">
+              {chunk.file}
+              {chunk.line !== undefined ? `:${chunk.line}` : ""} —{" "}
+            </span>
+          ) : chunk.line !== undefined ? (
+            <span className="text-[#8A8F98]">Line {chunk.line} — </span>
+          ) : null}
           {renderBody(chunk.body)}
         </span>
       </div>
