@@ -8,16 +8,17 @@ Built as a portfolio piece to explore AI integration, streaming UIs, and develop
 
 ## Status
 
-This repository is under active development. The UI shell and streaming plumbing are in place; Claude wiring and GitHub PR ingestion are next.
+The core review flow works end to end: paste code or a GitHub PR URL and get a live, categorised review streamed from Claude. Deploy is the remaining step.
 
 | Area | State |
 |---|---|
 | Split-pane terminal UI | Shipped |
 | Language detection (TS/JS/Python/Rust/Go) | Shipped |
-| Simulated streaming output | Shipped |
-| `POST /api/review` SSE route | Stubbed — returns a fixed event sequence |
-| Anthropic Claude streaming | Planned |
-| GitHub PR diff fetch | Planned (input UI only) |
+| `POST /api/review` SSE route | Shipped |
+| Anthropic Claude streaming | Shipped |
+| GitHub PR diff fetch + review | Shipped |
+| Privacy policy (`/privacy`) | Shipped |
+| Biome lint / format | Shipped |
 | Live deploy | Not yet |
 
 A screenshot of the current UI lives at `docs/screenshot.png` (add yours here).
@@ -64,9 +65,10 @@ The goal is something a developer would actually want to use, not a demo.
 | Language | TypeScript | |
 | Styling | Tailwind CSS v4 | `@theme` in CSS, no config file needed |
 | Font | JetBrains Mono via `next/font/google` | Self-hosted, zero layout shift |
-| AI | Anthropic Claude (SDK installed; wiring next) | Strong at code reasoning |
+| AI | Anthropic Claude (Opus 4.7, streaming, structured tool use) | Strong at code reasoning |
 | Streaming | Server-Sent Events from a Route Handler | Simpler than WebSockets for one-way streams |
-| GitHub | REST API via personal access token | Public + authorised private repos |
+| GitHub | REST API; user-supplied token for private repos | Public anonymous, private with the user's own token |
+| Tooling | Biome (lint + format) | Single fast binary, no ESLint/Prettier split |
 | Deployment | Vercel (planned) | |
 
 ---
@@ -114,11 +116,12 @@ npm run dev                       # http://localhost:3000
 Environment variables (`.env.local`):
 
 ```
-ANTHROPIC_API_KEY=     # https://console.anthropic.com/
-GITHUB_TOKEN=          # https://github.com/settings/tokens (repo scope for private PRs)
+ANTHROPIC_API_KEY=     # required — https://console.anthropic.com/
+# ANTHROPIC_MODEL=     # optional, defaults to claude-opus-4-7
+# ANTHROPIC_EFFORT=    # optional, defaults to high (low|medium|high|xhigh|max)
 ```
 
-`ANTHROPIC_API_KEY` is required once the Claude wiring lands. `GITHUB_TOKEN` is only needed for the PR-URL flow against private repos.
+`ANTHROPIC_API_KEY` is the only required variable. There is **no** server-side GitHub token: public PRs are fetched anonymously, and a private-repo review uses a token the user pastes into the UI for that single request (never stored, logged, or sent to the model).
 
 ---
 
@@ -142,12 +145,37 @@ The UI is intentionally a single client component — it makes the streaming sta
 
 ## Roadmap
 
-- [ ] Wire `Anthropic.messages.stream()` into `/api/review` and replace the stub events
-- [ ] Prompt engineering for reliable categorised output (system prompt + JSON schema or structured tool use)
-- [ ] GitHub PR URL → diff fetch → per-file review loop
+- [x] Wire `Anthropic.messages.stream()` into `/api/review` and replace the stub events
+- [x] Prompt engineering for reliable categorised output (structured tool use)
+- [x] GitHub PR URL → diff fetch → review with per-file attribution
 - [ ] Shiki syntax highlighting in the left pane
 - [ ] Deploy to Vercel and add a public demo link
 - [ ] Optional: persist reviews so re-running shows a diff between this run and the last
+
+---
+
+## Changelog
+
+### 2026-05-29 — GitHub PR review + tooling
+
+**Added**
+- **GitHub PR review.** Paste a PR URL and DevReview fetches the unified diff from the GitHub API, budgets it by file, and streams a categorised review with each finding attributed to its file.
+- **User-supplied tokens for private repos.** Public PRs are fetched anonymously; a private repo is reviewed by pasting a personal access token into the UI. The token is used only to fetch that one diff and is never stored, logged, written to the browser, or sent to the model.
+- **Privacy policy** at `/privacy`, describing exactly what the app does with submitted code, diffs, and tokens.
+- **In-app disclosures**: a privacy note on the token field, and a "nothing is cached — reviews run fresh" performance notice.
+- **Biome** for lint/format, with `npm run lint` and `npm run format` scripts and a config matched to the project's style.
+
+**Changed**
+- Environment: `ANTHROPIC_API_KEY` is the only required variable (plus optional `ANTHROPIC_MODEL` / `ANTHROPIC_EFFORT`). Removed the server-side `GITHUB_TOKEN` — PR tokens are now supplied per request in the UI.
+- GitHub diff fetches use `cache: no-store`; review results are never cached or persisted.
+
+**Fixed**
+- Accessibility/lint cleanup: explicit button `type`s, a valid "View source" link, an SVG `<title>`, and `role="tablist"` moved off the `<nav>` landmark.
+
+### Earlier
+
+- **Claude streaming** wired into `POST /api/review` via structured tool use (`report_finding` / `report_summary`), replacing the stubbed event sequence.
+- **Terminal UI**: split-pane layout, language detection, SSE streaming renderer, keyboard-first controls.
 
 ---
 
