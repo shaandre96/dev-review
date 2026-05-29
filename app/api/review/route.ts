@@ -14,6 +14,7 @@
  */
 
 import type { NextRequest } from "next/server";
+import { auth } from "@/auth";
 import { Anthropic, type ReviewChunk, streamReview } from "@/lib/anthropic";
 import {
   budgetPrDiff,
@@ -23,6 +24,22 @@ import {
   parsePrUrl,
 } from "@/lib/github";
 import { enforceReviewLimits } from "@/lib/ratelimit";
+import {
+  type Effort,
+  estimateReviewCostUsd,
+  isModelAllowed,
+  type ModelId,
+  monthlyCredits,
+  resolveEffort,
+  TIERS,
+  type TierId,
+  usdToCredits,
+} from "@/lib/tiers";
+import {
+  addCreditsUsed,
+  creditsUsedThisMonth,
+  recordUsageEvent,
+} from "@/lib/usage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +55,9 @@ type ReviewRequest = {
   prUrl?: string;
   /** Optional user-supplied GitHub token for private-repo PRs. Never stored. */
   token?: string;
+  /** Requested model + effort; validated against the caller's tier. */
+  model?: string;
+  effort?: string;
 };
 
 /** Hard cap on inbound code size. Prevents accidental 5 MB pastes from
@@ -100,14 +120,60 @@ export async function POST(req: NextRequest) {
   // Never logged, persisted, or forwarded to Anthropic.
   const token = body.token?.trim() || undefined;
 
-  // Throttle before doing anything that costs Anthropic tokens. Per-IP limits
-  // plus a global daily cap; see lib/ratelimit.ts.
-  const limit = await enforceReviewLimits(req.headers);
-  if (!limit.ok) {
-    return jsonError(limit.status, limit.code, limit.message, {
-      "retry-after": String(limit.retryAfter),
-    });
+  // Resolve the caller's tier (anonymous → free) and the model/effort they may
+  // use. Never trust the client: an unentitled model falls back to the tier's
+  // cheapest, and effort is fixed unless the tier allows choosing it.
+  const session = await auth();
+  const userId = session?.user?.id ?? null;
+  const tierId: TierId = session?.user?.tier ?? "free";
+  const tier = TIERS[tierId];
+
+  const requestedModel = body.model as ModelId | undefined;
+  const model: ModelId =
+    requestedModel && isModelAllowed(tier, requestedModel)
+      ? requestedModel
+      : tier.allowedModels[0];
+  const effort: Effort = resolveEffort(tier, body.effort as Effort | undefined);
+
+  // Free (anonymous or signed-in without a plan) → IP rate limits + global cap.
+  // Paid → monthly credit budget, checked before spending any tokens.
+  if (tierId === "free") {
+    const limit = await enforceReviewLimits(req.headers);
+    if (!limit.ok) {
+      return jsonError(limit.status, limit.code, limit.message, {
+        "retry-after": String(limit.retryAfter),
+      });
+    }
+  } else if (userId) {
+    const used = await creditsUsedThisMonth(userId);
+    const estimate = usdToCredits(estimateReviewCostUsd(model, effort));
+    if (used + estimate > monthlyCredits(tier)) {
+      return jsonError(
+        402,
+        "monthly_limit_reached",
+        "You've used this month's review credits. They reset next month — or adjust your plan from Account.",
+      );
+    }
   }
+
+  // Meter real usage once the stream completes (signed-in only; best-effort —
+  // a metering failure must never break the review).
+  const meter = userId
+    ? async (u: { inputTokens: number; outputTokens: number }) => {
+        try {
+          const { credits } = await recordUsageEvent({
+            userId,
+            model,
+            effort,
+            inputTokens: u.inputTokens,
+            outputTokens: u.outputTokens,
+          });
+          if (tierId !== "free") await addCreditsUsed(userId, credits);
+        } catch {
+          /* best-effort */
+        }
+      }
+    : undefined;
 
   const encoder = new TextEncoder();
   const abort = new AbortController();
@@ -138,7 +204,10 @@ export async function POST(req: NextRequest) {
           for await (const chunk of streamReview({
             code: combined,
             language: "diff",
+            model,
+            effort,
             signal: abort.signal,
+            onUsage: meter,
           })) {
             send("chunk", chunk satisfies ReviewChunk);
           }
@@ -147,7 +216,10 @@ export async function POST(req: NextRequest) {
             code,
             language: body.language,
             file: body.file,
+            model,
+            effort,
             signal: abort.signal,
+            onUsage: meter,
           })) {
             send("chunk", chunk satisfies ReviewChunk);
           }

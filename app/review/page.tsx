@@ -34,6 +34,7 @@
  */
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   type KeyboardEvent,
   useCallback,
@@ -44,6 +45,7 @@ import {
 } from "react";
 import { detectLang, type LangKey } from "@/lib/lang";
 import { parseSseFrame } from "@/lib/sse";
+import { type Effort, MODEL_PRICING, type ModelId, TIERS } from "@/lib/tiers";
 import { AuthControl } from "../_components/auth-control";
 
 /* ---------------------------------------------------------------- types ---- */
@@ -215,6 +217,20 @@ export default function Page() {
   const [error, setError] = useState<ReviewError | null>(null);
   const [demoMode, setDemoMode] = useState<boolean>(false);
 
+  // Tier (anonymous → free) gates which models/effort the user may pick.
+  const { data: session } = useSession();
+  const tier = TIERS[session?.user?.tier ?? "free"];
+  const [model, setModel] = useState<ModelId>("claude-haiku-4-5");
+  const [effort, setEffort] = useState<Effort>("medium");
+
+  // Keep the selection valid for the current tier (e.g. after sign in/out).
+  useEffect(() => {
+    setModel((m) =>
+      tier.allowedModels.includes(m) ? m : tier.allowedModels[0],
+    );
+    setEffort(tier.defaultEffort);
+  }, [tier]);
+
   const codeRef = useRef<HTMLTextAreaElement | null>(null);
   const prInputRef = useRef<HTMLInputElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
@@ -373,12 +389,16 @@ export default function Page() {
         source: "pr",
         prUrl: prUrl.trim(),
         token: token.trim() || undefined,
+        model,
+        effort,
       });
     } else {
       void runRealStream({
         source: "paste",
         code,
         language: detectLang(code),
+        model,
+        effort,
       });
     }
   }, [
@@ -386,6 +406,8 @@ export default function Page() {
     code,
     prUrl,
     token,
+    model,
+    effort,
     demoMode,
     runDemoStream,
     runRealStream,
@@ -535,17 +557,46 @@ export default function Page() {
           style={{ gridTemplateRows: "36px 1fr 32px" }}
         >
           <PaneHead>
-            <span
-              className={`inline-flex items-center px-2 py-[2px] rounded-[2px] text-[11px] tracking-[0.02em] border ${langBadge.cls}`}
-            >
-              {langBadge.label}
+            <span className="inline-flex items-center gap-2 min-w-0">
+              <span
+                className={`inline-flex items-center px-2 py-[2px] rounded-[2px] text-[11px] tracking-[0.02em] border ${langBadge.cls}`}
+              >
+                {langBadge.label}
+              </span>
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value as ModelId)}
+                disabled={tier.allowedModels.length <= 1}
+                title="Model"
+                className="bg-[#0D0D0D] border border-[#2A2A2A] text-[#C8CCD2] text-[11px] px-1 py-[2px] outline-none disabled:opacity-60"
+              >
+                {tier.allowedModels.map((m) => (
+                  <option key={m} value={m}>
+                    {MODEL_PRICING[m].label}
+                  </option>
+                ))}
+              </select>
+              {tier.effortChoice ? (
+                <select
+                  value={effort}
+                  onChange={(e) => setEffort(e.target.value as Effort)}
+                  title="Effort"
+                  className="bg-[#0D0D0D] border border-[#2A2A2A] text-[#C8CCD2] text-[11px] px-1 py-[2px] outline-none"
+                >
+                  {(["low", "medium", "high", "xhigh"] as const).map((ef) => (
+                    <option key={ef} value={ef}>
+                      {ef}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-[#4A4D54] text-[11px]">{effort}</span>
+              )}
             </span>
-            <span className="text-[#6C7280] text-[11.5px]">
+            <span className="text-[#6C7280] text-[11.5px] whitespace-nowrap">
               <Kbd>⌘</Kbd>
               <Kbd>↵</Kbd>
-              <span className="mx-1">to review · </span>
-              <Kbd>Esc</Kbd>
-              <span className="ml-1">to clear</span>
+              <span className="ml-1">to review</span>
             </span>
           </PaneHead>
 

@@ -54,7 +54,15 @@ export interface StreamReviewParams {
   language?: string;
   /** File path for single-file reviews; emitted as a header chunk. */
   file?: string;
+  /** Model + effort; default to the env-configured values when omitted. */
+  model?: string;
+  effort?: "low" | "medium" | "high" | "xhigh" | "max";
   signal?: AbortSignal;
+  /** Called once with the real token usage after the stream completes. */
+  onUsage?: (usage: {
+    inputTokens: number;
+    outputTokens: number;
+  }) => void | Promise<void>;
 }
 
 /** Re-exported so the route handler can typecheck against Anthropic.* errors. */
@@ -67,7 +75,7 @@ export { Anthropic };
 export async function* streamReview(
   params: StreamReviewParams,
 ): AsyncGenerator<ReviewChunk, void, undefined> {
-  const { code, language, file, signal } = params;
+  const { code, language, file, model, effort, signal, onUsage } = params;
 
   // Emit a single header chunk so the client can show "analysing: foo.ts"
   // before the model starts streaming findings.
@@ -75,9 +83,9 @@ export async function* streamReview(
 
   const stream = client().messages.stream(
     {
-      model: MODEL_ID,
+      model: model ?? MODEL_ID,
       max_tokens: 16000,
-      output_config: { effort: EFFORT },
+      output_config: { effort: effort ?? EFFORT },
       system: [
         {
           type: "text",
@@ -139,7 +147,13 @@ export async function* streamReview(
 
   // Drain stream to surface any post-stream errors (e.g. max_tokens, refusal).
   // Throws on aborts and API errors, which the route handler classifies.
-  await stream.finalMessage();
+  const final = await stream.finalMessage();
+  if (onUsage && final.usage) {
+    await onUsage({
+      inputTokens: final.usage.input_tokens,
+      outputTokens: final.usage.output_tokens,
+    });
+  }
 }
 
 function normaliseToolCall(

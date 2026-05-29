@@ -206,6 +206,12 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Model selection + cost-aware metering
+
+**Added**
+- Tier-gated model + effort picker in the terminal (Free: Haiku/medium, locked; Lite: + Sonnet; Pro: + Opus with effort choice).
+- `/api/review` resolves the caller's tier, validates the requested model/effort server-side (never trusting the client), and meters: paid tiers enforce a monthly credit budget (pre-flight estimate, then actual-token deduction) tracked in Redis with a `usage_event` audit row; free stays on IP rate limits. `streamReview` now takes model/effort and reports real token usage (`lib/usage.ts`).
+
 ### 2026-05-30 — Stripe billing
 
 **Added**
