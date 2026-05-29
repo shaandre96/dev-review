@@ -168,3 +168,47 @@ export function splitDiffByFile(diff: string): DiffFile[] {
     return { file, patch };
   });
 }
+
+/** Byte budget for a fetched PR diff. Files are included until this is hit,
+ *  so a huge PR reviews its first files rather than blowing up the model call. */
+export const MAX_PR_BYTES = 100_000;
+
+/**
+ * Trim a unified diff to the byte budget by dropping whole files once the
+ * budget is exhausted (at least one file is always kept). Returns the combined
+ * patch plus a header string describing what was reviewed.
+ */
+export function budgetPrDiff(
+  diff: string,
+  ref: PrRef,
+): { combined: string; header: string } {
+  const files = splitDiffByFile(diff);
+  if (files.length === 0) {
+    throw new GitHubError(
+      "empty_diff",
+      "This PR has no reviewable file changes.",
+    );
+  }
+
+  const kept: string[] = [];
+  let used = 0;
+  let skipped = 0;
+  for (const f of files) {
+    const size = Buffer.byteLength(f.patch, "utf8");
+    if (kept.length > 0 && used + size > MAX_PR_BYTES) {
+      skipped++;
+      continue;
+    }
+    kept.push(f.patch);
+    used += size;
+  }
+
+  const slug = `${ref.owner}/${ref.repo} #${ref.number}`;
+  const n = kept.length;
+  const header =
+    skipped > 0
+      ? `${slug} — ${n} file${n === 1 ? "" : "s"} (${skipped} skipped, diff too large)`
+      : `${slug} — ${n} file${n === 1 ? "" : "s"}`;
+
+  return { combined: kept.join("\n\n"), header };
+}
