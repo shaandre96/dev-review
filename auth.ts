@@ -17,6 +17,7 @@ import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { getDb, schema } from "@/lib/db";
+import { getUserTier } from "@/lib/entitlements";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(getDb(), {
@@ -27,4 +28,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   }),
   session: { strategy: "database" },
   providers: [GitHub, Google],
+  pages: { signIn: "/signin" },
+  callbacks: {
+    // Expose the user id + effective tier on the session. Tier is read from the
+    // subscription table here and refreshed whenever the session is validated.
+    async session({ session, user }) {
+      if (session.user) {
+        session.user.id = user.id;
+        session.user.tier = await getUserTier(user.id);
+      }
+      return session;
+    },
+  },
 });

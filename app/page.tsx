@@ -43,6 +43,7 @@ import {
 } from "react";
 import { detectLang, type LangKey } from "@/lib/lang";
 import { parseSseFrame } from "@/lib/sse";
+import { AuthControl } from "./_components/auth-control";
 
 /* ---------------------------------------------------------------- types ---- */
 
@@ -512,9 +513,13 @@ export default function Page() {
           </TabButton>
         </div>
 
-        <div className="justify-self-end inline-flex items-center gap-2 text-[#6C7280] text-[11.5px]">
-          <StatusDot reviewing={isReviewing} />
-          <span>{isReviewing ? "reviewing…" : "idle"}</span>
+        <div className="justify-self-end inline-flex items-center gap-3 text-[#6C7280] text-[11.5px]">
+          <AuthControl />
+          <span className="w-px self-stretch bg-[#2A2A2A] my-1" aria-hidden />
+          <span className="inline-flex items-center gap-2">
+            <StatusDot reviewing={isReviewing} />
+            {isReviewing ? "reviewing…" : "idle"}
+          </span>
         </div>
       </header>
 

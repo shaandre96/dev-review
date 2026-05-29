@@ -8,6 +8,7 @@ import {
   netRevenueUsd,
   resolveEffort,
   TIERS,
+  tierFromSubscription,
 } from "./tiers.ts";
 
 describe("review cost", () => {
@@ -67,5 +68,58 @@ describe("unit economics", () => {
   test("credit conversion is consistent with the budget", () => {
     assert.equal(monthlyCredits(TIERS.lite), 40_000); // $4
     assert.equal(monthlyCredits(TIERS.pro), 120_000); // $12
+  });
+});
+
+describe("tierFromSubscription", () => {
+  const future = new Date("2026-07-01");
+  const now = new Date("2026-05-29");
+
+  test("no subscription → free", () => {
+    assert.equal(tierFromSubscription(null, now), "free");
+  });
+
+  test("active subscription within period → its tier", () => {
+    assert.equal(
+      tierFromSubscription(
+        { tier: "pro", status: "active", currentPeriodEnd: future },
+        now,
+      ),
+      "pro",
+    );
+  });
+
+  test("trialing counts as active", () => {
+    assert.equal(
+      tierFromSubscription(
+        { tier: "lite", status: "trialing", currentPeriodEnd: future },
+        now,
+      ),
+      "lite",
+    );
+  });
+
+  test("canceled or past_due → free", () => {
+    assert.equal(
+      tierFromSubscription(
+        { tier: "pro", status: "canceled", currentPeriodEnd: future },
+        now,
+      ),
+      "free",
+    );
+  });
+
+  test("active but lapsed period → free", () => {
+    assert.equal(
+      tierFromSubscription(
+        {
+          tier: "pro",
+          status: "active",
+          currentPeriodEnd: new Date("2026-05-01"),
+        },
+        now,
+      ),
+      "free",
+    );
   });
 });

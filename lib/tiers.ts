@@ -143,6 +143,32 @@ export function resolveEffort(tier: Tier, requested?: Effort): Effort {
   return tier.defaultEffort;
 }
 
+export type SubscriptionSnapshot = {
+  tier: TierId;
+  status: string | null;
+  currentPeriodEnd: Date | null;
+};
+
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
+
+/**
+ * Effective tier from a subscription row. Free unless there is an active (or
+ * trialing) subscription whose period hasn't lapsed — so cancelled, past-due,
+ * or expired users fall back to the free tier.
+ */
+export function tierFromSubscription(
+  sub: SubscriptionSnapshot | null | undefined,
+  now: Date = new Date(),
+): TierId {
+  if (!sub || !ACTIVE_SUBSCRIPTION_STATUSES.has(sub.status ?? "")) {
+    return "free";
+  }
+  if (sub.currentPeriodEnd && sub.currentPeriodEnd.getTime() < now.getTime()) {
+    return "free";
+  }
+  return sub.tier;
+}
+
 /** Stripe standard fee for a one-off/subscription charge (USD). */
 export function stripeFeeUsd(priceUsd: number): number {
   return priceUsd * 0.029 + 0.3;
