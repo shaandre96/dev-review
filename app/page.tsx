@@ -41,6 +41,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { detectLang, type LangKey } from "@/lib/lang";
+import { parseSseFrame } from "@/lib/sse";
 
 /* ---------------------------------------------------------------- types ---- */
 
@@ -54,14 +56,6 @@ type ReviewChunk =
   | { kind: "summary"; issues: number; suggestions: number; positives: number };
 
 type ReviewError = { code: string; message: string };
-
-type LangKey =
-  | "typescript"
-  | "javascript"
-  | "python"
-  | "rust"
-  | "go"
-  | "plaintext";
 
 /* ------------------------------------------------------------- constants ---- */
 
@@ -176,23 +170,6 @@ const LANG_BADGE: Record<LangKey, { label: string; cls: string }> = {
 };
 
 /* ------------------------------------------------------------ utilities ---- */
-
-function detectLang(t: string): LangKey {
-  if (!t.trim()) return "plaintext";
-  // TS/JS first — `import type {...}` is TypeScript, not Python.
-  if (
-    /:\s*\w+(\[\]|<.*>)?\s*[=;)]|interface\s+\w+|type\s+\w+\s*=|import\s+type\b/.test(
-      t,
-    )
-  )
-    return "typescript";
-  if (/\bdef\s+\w+\(|^\s*from\s+\w[\w.]*\s+import\b|print\(/m.test(t))
-    return "python";
-  if (/\bfn\s+\w+\(|let\s+mut\s+|::\s*\w+/.test(t)) return "rust";
-  if (/\bpackage\s+main\b|func\s+\w+\(/.test(t)) return "go";
-  if (/\b(const|let|var)\s+\w+\s*=|=>\s*\{/.test(t)) return "javascript";
-  return "plaintext";
-}
 
 /** Render simple `code` spans inside review bodies without dangerouslySetInnerHTML. */
 function renderBody(body: string) {
@@ -353,12 +330,7 @@ export default function Page() {
       }
 
       function handleSseFrame(frame: string) {
-        let event = "message";
-        let data = "";
-        for (const line of frame.split("\n")) {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          else if (line.startsWith("data:")) data += line.slice(5).trim();
-        }
+        const { event, data } = parseSseFrame(frame);
         if (!data) return;
         let payload: unknown;
         try {
