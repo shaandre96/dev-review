@@ -82,6 +82,7 @@ It's a deliberate counterpoint to a warmer companion project of mine. Same desig
 | GitHub | REST API; user-supplied token for private repos | Public anonymous, private with the user's own token |
 | Tooling | Biome (lint + format) | Single fast binary, no ESLint/Prettier split |
 | Database | Neon Postgres + Drizzle ORM | Serverless Postgres; type-safe schema + SQL migrations |
+| Auth | Auth.js v5 (Google + GitHub OAuth) | Database-backed sessions via the Drizzle adapter |
 | Deployment | Vercel | |
 
 ---
@@ -138,9 +139,16 @@ UPSTASH_REDIS_REST_TOKEN=
 # RATE_LIMIT_PER_DAY=5
 # DAILY_REVIEW_CAP=20
 DATABASE_URL=               # Postgres for accounts/billing/usage — https://neon.tech/
+AUTH_SECRET=                # `npx auth secret` — signs the session cookie
+AUTH_GITHUB_ID=             # GitHub OAuth app; callback <origin>/api/auth/callback/github
+AUTH_GITHUB_SECRET=
+AUTH_GOOGLE_ID=             # Google OAuth client; redirect <origin>/api/auth/callback/google
+AUTH_GOOGLE_SECRET=
 ```
 
 After setting `DATABASE_URL`, apply the schema with `npm run db:migrate` (migrations are generated from `lib/db/schema.ts` via `npm run db:generate`).
+
+Auth (accounts) needs `AUTH_SECRET` plus the Google and GitHub OAuth credentials above; without them, sign-in is disabled but anonymous reviews still work.
 
 `ANTHROPIC_API_KEY` is the only strictly required variable. There is **no** server-side GitHub token: public PRs are fetched anonymously, and a private-repo review uses a token the user pastes into the UI for that single request (never stored, logged, or sent to the model).
 
@@ -185,6 +193,12 @@ The UI is intentionally a single client component — it makes the streaming sta
 ---
 
 ## Changelog
+
+### 2026-05-29 — Auth.js (Google + GitHub)
+
+**Added**
+- Auth.js v5 wired with Google and GitHub OAuth, persisted to Neon via the Drizzle adapter using database-backed sessions (`auth.ts`, `app/api/auth/[...nextauth]/route.ts`).
+- Auth env vars (`AUTH_SECRET`, `AUTH_GITHUB_ID/SECRET`, `AUTH_GOOGLE_ID/SECRET`). Sign-in is optional — anonymous reviews still work without it.
 
 ### 2026-05-29 — Pricing model + database foundation
 
