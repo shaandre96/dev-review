@@ -28,7 +28,7 @@ export default function SignInPage() {
           <div className="mt-5 flex flex-col gap-[10px]">
             <button
               type="button"
-              onClick={() => signIn("github", { callbackUrl: "/" })}
+              onClick={() => signIn("github", { callbackUrl: "/review" })}
               className="w-full px-4 py-[10px] border border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12.5px] text-left inline-flex items-center gap-[10px]"
             >
               <svg
@@ -45,7 +45,7 @@ export default function SignInPage() {
 
             <button
               type="button"
-              onClick={() => signIn("google", { callbackUrl: "/" })}
+              onClick={() => signIn("google", { callbackUrl: "/review" })}
               className="w-full px-4 py-[10px] border border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12.5px] text-left inline-flex items-center gap-[10px]"
             >
               <span

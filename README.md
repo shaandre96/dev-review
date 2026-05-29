@@ -160,24 +160,27 @@ The `UPSTASH_*` vars enable rate limiting (per-IP limits + a global daily cap) a
 
 ```
 app/
-  layout.tsx              # JetBrains Mono + global shell
-  globals.css             # Tailwind v4 import, @theme overrides --font-mono
-  page.tsx                # Full terminal UI (single client component)
+  layout.tsx              # JetBrains Mono + SessionProvider + global shell
+  page.tsx                # Landing page + pricing cards (Free/Lite/Pro)
+  review/page.tsx         # Terminal review UI (single client component)
+  signin/page.tsx         # Styled Google + GitHub sign-in
+  account/page.tsx        # Account info + deletion
+  privacy/page.tsx        # Privacy policy
+  providers.tsx           # SessionProvider wrapper
+  _components/            # Shared client components (auth control, …)
   api/
-    review/
-      route.ts            # POST handler, returns text/event-stream
+    review/route.ts       # Review SSE handler
+    auth/[...nextauth]/route.ts   # Auth.js handlers
+    account/route.ts      # DELETE — account deletion
+auth.ts                   # Auth.js v5 config (providers, adapter, session)
 lib/
-  db/
-    schema.ts             # Drizzle schema (auth + subscription + usage)
-    index.ts              # Neon-backed Drizzle client
+  db/                     # Drizzle schema + Neon client
   tiers.ts                # pricing model: tiers, model access, credit math
+  entitlements.ts         # tier resolution from the subscription table
 drizzle/                  # generated SQL migrations
-.env.example              # Required env var template
-drizzle.config.ts         # drizzle-kit config
-next.config.ts            # turbopack.root pinned to project
 ```
 
-The UI is intentionally a single client component — it makes the streaming state machine easier to read end-to-end. As the surface grows (settings, history, auth), pieces will split out into `app/_components/`.
+The terminal lives at `/review` (one client component, so the streaming state machine reads end-to-end); `/` is the marketing + pricing landing.
 
 ---
 
@@ -193,6 +196,14 @@ The UI is intentionally a single client component — it makes the streaming sta
 ---
 
 ## Changelog
+
+### 2026-05-29 — Landing page + pricing, terminal moved to /review
+
+**Added**
+- Marketing landing page at `/` with Free / Lite / Pro pricing cards (prices pulled from the tier config). Free → `/review`; Lite/Pro → sign-in (checkout lands with billing).
+
+**Changed**
+- The terminal review UI moved from `/` to `/review`; post-sign-in now lands there.
 
 ### 2026-05-29 — Sign-in UI, accounts & privacy
 
