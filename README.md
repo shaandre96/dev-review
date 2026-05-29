@@ -194,6 +194,16 @@ The UI is intentionally a single client component — it makes the streaming sta
 
 ## Changelog
 
+### 2026-05-29 — Sign-in UI, accounts & privacy
+
+**Added**
+- Styled `/signin` page (Google + GitHub) and a session-aware header control (tier badge, email, sign out).
+- Effective tier resolved from the `subscription` table and exposed on the session — a signed-in user with no active plan is treated as free (`lib/tiers.ts` `tierFromSubscription`, `lib/entitlements.ts`).
+- `/account` page with permanent **account deletion** (`DELETE /api/account`): removes profile, login connections, session, and subscription; usage rows are anonymised.
+
+**Changed**
+- Privacy policy rewritten for accounts: what's stored on sign-in, the session cookie, processors (Google / GitHub / Neon / Upstash / Stripe), cookieless analytics, and how to delete your data.
+
 ### 2026-05-29 — Auth.js (Google + GitHub)
 
 **Added**

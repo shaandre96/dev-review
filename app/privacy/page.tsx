@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy — DevReview",
   description:
-    "What DevReview does with the code, diffs, and tokens you submit.",
+    "What DevReview does with the code, diffs, tokens, and account data you provide.",
 };
 
 const UPDATED = "29 May 2026";
@@ -29,17 +29,18 @@ export default function PrivacyPage() {
 
         <p className="mt-6 text-[#C8CCD2]">
           DevReview is a code-review tool: you paste a snippet or point it at a
-          GitHub pull request, and it streams back an AI-generated review. This
-          page describes exactly what the application does with what you submit.
-          It reflects the behaviour of the source code, not boilerplate.
+          GitHub pull request and it streams back an AI-generated review. You
+          can use it anonymously, or sign in to subscribe to a paid plan. This
+          page describes exactly what the application does with what you
+          provide. It reflects the behaviour of the source code, not
+          boilerplate.
         </p>
 
         <Section title="The short version">
           <ul className="list-disc pl-5 space-y-1 text-[#C8CCD2]">
             <li>
-              We do <Em>not</Em> have a database. Your code, diffs, and tokens
-              are processed in memory to serve a single request and are not
-              persisted by this app.
+              Anonymous reviews need no account; your code/diff is processed to
+              serve the request and is not stored by us.
             </li>
             <li>
               To produce a review, the code or diff you submit is sent to{" "}
@@ -54,8 +55,15 @@ export default function PrivacyPage() {
               <Em>never</Em> stored, logged, written to your browser, or sent to
               the model.
             </li>
-            <li>Nothing is cached. Every review is recomputed from scratch.</li>
-            <li>The app sets no cookies and runs no analytics or trackers.</li>
+            <li>
+              If you <Em>sign in</Em> (to use a paid plan) we store account data
+              and set a session cookie — see <Em>Accounts</Em> below. You can
+              delete it at any time.
+            </li>
+            <li>
+              Review outputs are never cached. We use cookieless, aggregate
+              analytics; no advertising or cross-site trackers.
+            </li>
           </ul>
         </Section>
 
@@ -81,78 +89,103 @@ export default function PrivacyPage() {
           <p className="text-[#C8CCD2]">
             Public repositories need no token. To review a PR in a{" "}
             <Em>private</Em> repository, you may supply your own GitHub token.
-            When you do:
+            It is held in page memory only (never written to{" "}
+            <Code>localStorage</Code>, <Code>sessionStorage</Code>, or cookies),
+            sent to our server solely as the <Code>Authorization</Code> header
+            on the single GitHub diff fetch, and never logged, stored, or sent
+            to the model. The fetch is made with caching disabled.
+          </p>
+        </Section>
+
+        <Section title="Accounts">
+          <p className="text-[#C8CCD2]">
+            Anonymous use requires no account. If you sign in with Google or
+            GitHub (to subscribe to a Lite or Pro plan), we store:
           </p>
           <ul className="mt-3 list-disc pl-5 space-y-1 text-[#C8CCD2]">
+            <li>your email, display name, and avatar URL from the provider;</li>
+            <li>an identifier linking your account to that provider;</li>
+            <li>a session record plus a cookie that keeps you signed in;</li>
             <li>
-              In your browser, the token is held in page memory only. It is not
-              written to <Code>localStorage</Code>, <Code>sessionStorage</Code>,
-              or cookies, and it is cleared when you press Clear.
-            </li>
-            <li>
-              It is sent to our server with the review request and used solely
-              as the <Code>Authorization</Code> header on the single GitHub diff
-              fetch.
-            </li>
-            <li>
-              It is never written to logs, never stored, and never included in
-              the data sent to Anthropic.
-            </li>
-            <li>
-              The GitHub request is made with caching disabled, so the
-              authenticated response is not retained.
+              your subscription status and per-review usage (model, token
+              counts, and cost) for billing and quota enforcement.
             </li>
           </ul>
-          <p className="mt-3 text-[#8A8F98] text-[12px]">
-            We still recommend using a fine-grained, read-only, short-lived
-            token scoped to the minimum repositories needed, and revoking it
-            when you&apos;re done.
+          <p className="mt-3 text-[#C8CCD2]">
+            We never receive your Google or GitHub password. You can permanently
+            delete your account and this data at any time from the{" "}
+            <Em>Account</Em> page.
           </p>
         </Section>
 
         <Section title="Third parties">
           <p className="text-[#C8CCD2]">
-            Producing a review necessarily shares your content with services
-            outside this app:
+            Running the service shares data with a few providers, each governed
+            by its own terms and privacy policy:
           </p>
           <ul className="mt-3 list-disc pl-5 space-y-1 text-[#C8CCD2]">
             <li>
-              <Em>Anthropic</Em> — receives the code or diff you submit, in
-              order to generate the review. Their handling is governed by
-              Anthropic&apos;s own terms and privacy policy.
+              <Em>Anthropic</Em> — receives the code or diff you submit, to
+              generate the review.
             </li>
             <li>
-              <Em>GitHub</Em> — receives the PR reference and, if supplied, your
-              token, in order to return the diff. Governed by GitHub&apos;s
-              terms and privacy policy.
+              <Em>GitHub</Em> — receives the PR reference (and your token, if
+              supplied) to return a diff; and your basic profile if you sign in
+              with GitHub.
+            </li>
+            <li>
+              <Em>Google</Em> — your basic profile (email, name, avatar) if you
+              sign in with Google.
+            </li>
+            <li>
+              <Em>Neon</Em> — our database host; stores account, subscription,
+              and usage records.
+            </li>
+            <li>
+              <Em>Upstash</Em> — holds short-lived rate-limit counters keyed by
+              IP (anonymous) or account.
+            </li>
+            <li>
+              <Em>Stripe</Em> — processes payments for paid plans; we never see
+              or store your card details.
             </li>
           </ul>
         </Section>
 
-        <Section title="Caching and performance">
+        <Section title="Caching and review storage">
           <p className="text-[#C8CCD2]">
-            For privacy and freshness, this app does not cache. The GitHub diff
-            fetch is explicitly marked no-store, and review results are not
-            saved or reused. The practical trade-off is speed:{" "}
-            <Em>
-              every review is computed fresh, so it can take a few seconds and
-              identical requests are not served instantly from a cache.
-            </Em>
+            Review outputs are not cached or stored, and the GitHub diff fetch
+            is marked no-store. For signed-in users we keep only{" "}
+            <Em>usage metadata</Em> — model, token counts, and cost per review —
+            to enforce quotas and billing, never the code or the review text.
+            The trade-off is speed: every review is computed fresh, so it can
+            take a few seconds and identical requests are not served from a
+            cache.
           </p>
         </Section>
 
-        <Section title="Storage, cookies, and tracking">
+        <Section title="Cookies, analytics, and logs">
           <p className="text-[#C8CCD2]">
-            This application has no database and stores none of your
-            submissions. It sets no cookies of its own and includes no
-            analytics, advertising, or third-party tracking scripts.
+            The only cookie this app sets is the Auth.js session cookie, and
+            only after you sign in. Analytics are provided by Vercel Analytics,
+            which is aggregate and cookieless — no advertising or cross-site
+            tracking.
           </p>
           <p className="mt-3 text-[#8A8F98] text-[12px]">
-            Note: the hosting provider used to run this app (for example,
-            Vercel) may record standard operational request logs such as IP
-            address, timestamp, and response status as part of serving traffic.
-            That logging is the provider&apos;s, not this application&apos;s,
-            and is governed by the provider&apos;s policies.
+            Note: the hosting provider (Vercel) may record standard operational
+            request logs — IP address, timestamp, response status — as part of
+            serving traffic. That logging is the provider&apos;s and is governed
+            by its policies.
+          </p>
+        </Section>
+
+        <Section title="Deleting your data">
+          <p className="text-[#C8CCD2]">
+            Anonymous use leaves nothing to delete beyond transient rate-limit
+            counters that expire on their own. If you have an account, deleting
+            it from the <Em>Account</Em> page removes your profile, login
+            connections, session, and subscription record; usage rows are
+            anonymised. Deletion is immediate and cannot be undone.
           </p>
         </Section>
 
@@ -173,7 +206,7 @@ export default function PrivacyPage() {
         </Section>
 
         <p className="mt-10 text-[#4A4D54] text-[11px]">
-          This is a personal portfolio project and not a commercial service.
+          This is a personal portfolio project, not a commercial service.
         </p>
       </div>
     </main>
