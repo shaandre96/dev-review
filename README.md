@@ -19,7 +19,8 @@ The core review flow works end to end: paste code or a GitHub PR URL and get a l
 | GitHub PR diff fetch + review | Shipped |
 | Privacy policy (`/privacy`) | Shipped |
 | Biome lint / format | Shipped |
-| Live deploy | Not yet |
+| Live deploy | Shipped |
+| Roadmap item improvements| Not yet |
 
 A screenshot of the current UI lives at `docs/screenshot.png` (add yours here).
 
@@ -47,13 +48,24 @@ Keyboard-first: `⌘ Enter` runs a review, `Esc` clears.
 
 ## Why this project
 
+It seems LLMs and vibe coding is taking over the world. I've personally witnessed juniors submitting PRs for code they don't
+understand and I'm a little tired of the hand-holding. I'm not an AI pessimist, but rather believe it can be leveraged to
+speed up development and expedite personal development and growth if used in the "right" way. Just like reading and contributing to
+open source projects in the past, it's a great tool for juniors or inexperienced developers to learn the syntax, systems and design patterns.
+
+Yes, this project is developed with the assistance of agentic coding tools like Claude Code, Claude Design, v0, Cursor, etc. I strongly believe that any developer or engineer that cannot adapt to the changing landscape will be left behind. But every single line is reviewed, every single suggestion is considered. I believe AI is a great learning tool, great for research and scaffolding ideas (if communicated clearly); it certainly beats the countless hours trudging through outdated StackOverflow threads without answers and reading poor developer documentation.
+
+The goal is something a developer would actually want to use, not just a portfolio demo. The idea is a single-focus tool to assist
+developers in understanding where their code might be improved, or explain why a diff offered by their LLM of choice isn't
+up to scratch. How you use this tool is up to you.
+
+Secondarily, this is a highlight piece of my portfolio to support my job search in this incredibly saturated market.
+
 It's a deliberate counterpoint to a warmer companion project of mine. Same designer, opposite palette and audience:
 
 - **Dark terminal aesthetic** — sharp 1px borders, no rounded corners on the main panes, monospace throughout (JetBrains Mono)
 - **Streaming over batch** — SSE chunks feel more like an LLM and less like a form submission
 - **Developer-tool UX** — keyboard shortcuts, lowercase labels, a status pulse, a footer crediting the model
-
-The goal is something a developer would actually want to use, not a demo.
 
 ---
 
@@ -156,12 +168,22 @@ The UI is intentionally a single client component — it makes the streaming sta
 - [x] Prompt engineering for reliable categorised output (structured tool use)
 - [x] GitHub PR URL → diff fetch → review with per-file attribution
 - [ ] Shiki syntax highlighting in the left pane
-- [ ] Deploy to Vercel and add a public demo link
+- [x] Deploy to Vercel and add a public demo link
 - [ ] Optional: persist reviews so re-running shows a diff between this run and the last
 
 ---
 
 ## Changelog
+
+### 2026-05-29 — License
+
+**Added**
+- MIT `LICENSE.md`.
+
+### 2026-05-29 — Analytics
+
+**Added**
+- Vercel Analytics (`@vercel/analytics`) mounted in the root layout for privacy-friendly traffic insights.
 
 ### 2026-05-29 — Rate limiting
 
@@ -199,4 +221,4 @@ Design originated as a Claude Design prototype, then ported to React/Tailwind. B
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE) once added.
+MIT — see [LICENSE](LICENSE.md).
