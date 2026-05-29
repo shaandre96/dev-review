@@ -22,6 +22,7 @@ import {
   type PrRef,
   parsePrUrl,
 } from "@/lib/github";
+import { enforceReviewLimits } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -99,6 +100,15 @@ export async function POST(req: NextRequest) {
   // Never logged, persisted, or forwarded to Anthropic.
   const token = body.token?.trim() || undefined;
 
+  // Throttle before doing anything that costs Anthropic tokens. Per-IP limits
+  // plus a global daily cap; see lib/ratelimit.ts.
+  const limit = await enforceReviewLimits(req.headers);
+  if (!limit.ok) {
+    return jsonError(limit.status, limit.code, limit.message, {
+      "retry-after": String(limit.retryAfter),
+    });
+  }
+
   const encoder = new TextEncoder();
   const abort = new AbortController();
   // Forward client cancel (browser nav away, close tab) to the Anthropic call.
@@ -171,10 +181,15 @@ export async function POST(req: NextRequest) {
   });
 }
 
-function jsonError(status: number, code: string, message: string) {
+function jsonError(
+  status: number,
+  code: string,
+  message: string,
+  extraHeaders?: Record<string, string>,
+) {
   return new Response(JSON.stringify({ error: { code, message } }), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...extraHeaders },
   });
 }
 

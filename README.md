@@ -19,7 +19,8 @@ The core review flow works end to end: paste code or a GitHub PR URL and get a l
 | GitHub PR diff fetch + review | Shipped |
 | Privacy policy (`/privacy`) | Shipped |
 | Biome lint / format | Shipped |
-| Live deploy | Not yet |
+| Live deploy | Shipped |
+| Roadmap item improvements| Not yet |
 
 A screenshot of the current UI lives at `docs/screenshot.png` (add yours here).
 
@@ -47,13 +48,24 @@ Keyboard-first: `⌘ Enter` runs a review, `Esc` clears.
 
 ## Why this project
 
+It seems LLMs and vibe coding is taking over the world. I've personally witnessed juniors submitting PRs for code they don't
+understand and I'm a little tired of the hand-holding. I'm not an AI pessimist, but rather believe it can be leveraged to
+speed up development and expedite personal development and growth if used in the "right" way. Just like reading and contributing to
+open source projects in the past, it's a great tool for juniors or inexperienced developers to learn the syntax, systems and design patterns.
+
+Yes, this project is developed with the assistance of agentic coding tools like Claude Code, Claude Design, v0, Cursor, etc. I strongly believe that any developer or engineer that cannot adapt to the changing landscape will be left behind. But every single line is reviewed, every single suggestion is considered. I believe AI is a great learning tool, great for research and scaffolding ideas (if communicated clearly); it certainly beats the countless hours trudging through outdated StackOverflow threads without answers and reading poor developer documentation.
+
+The goal is something a developer would actually want to use, not just a portfolio demo. The idea is a single-focus tool to assist
+developers in understanding where their code might be improved, or explain why a diff offered by their LLM of choice isn't
+up to scratch. How you use this tool is up to you.
+
+Secondarily, this is a highlight piece of my portfolio to support my job search in this incredibly saturated market.
+
 It's a deliberate counterpoint to a warmer companion project of mine. Same designer, opposite palette and audience:
 
 - **Dark terminal aesthetic** — sharp 1px borders, no rounded corners on the main panes, monospace throughout (JetBrains Mono)
 - **Streaming over batch** — SSE chunks feel more like an LLM and less like a form submission
 - **Developer-tool UX** — keyboard shortcuts, lowercase labels, a status pulse, a footer crediting the model
-
-The goal is something a developer would actually want to use, not a demo.
 
 ---
 
@@ -116,12 +128,19 @@ npm run dev                       # http://localhost:3000
 Environment variables (`.env.local`):
 
 ```
-ANTHROPIC_API_KEY=     # required — https://console.anthropic.com/
-# ANTHROPIC_MODEL=     # optional, defaults to claude-opus-4-7
-# ANTHROPIC_EFFORT=    # optional, defaults to high (low|medium|high|xhigh|max)
+ANTHROPIC_API_KEY=          # required — https://console.anthropic.com/
+# ANTHROPIC_MODEL=          # optional, defaults to claude-opus-4-7
+# ANTHROPIC_EFFORT=         # optional, defaults to high (low|medium|high|xhigh|max)
+UPSTASH_REDIS_REST_URL=     # rate limiting — free DB at https://upstash.com/
+UPSTASH_REDIS_REST_TOKEN=
+# RATE_LIMIT_PER_MINUTE=1   # optional limit overrides (defaults shown)
+# RATE_LIMIT_PER_DAY=5
+# DAILY_REVIEW_CAP=20
 ```
 
-`ANTHROPIC_API_KEY` is the only required variable. There is **no** server-side GitHub token: public PRs are fetched anonymously, and a private-repo review uses a token the user pastes into the UI for that single request (never stored, logged, or sent to the model).
+`ANTHROPIC_API_KEY` is the only strictly required variable. There is **no** server-side GitHub token: public PRs are fetched anonymously, and a private-repo review uses a token the user pastes into the UI for that single request (never stored, logged, or sent to the model).
+
+The `UPSTASH_*` vars enable rate limiting (per-IP limits + a global daily cap) across serverless instances. Without them the app falls back to an in-memory limiter that works locally but is **not** enforceable in production. The global cap smooths spend under your **Anthropic Console monthly limit** — set that limit too; it is the hard ceiling.
 
 ---
 
@@ -149,12 +168,29 @@ The UI is intentionally a single client component — it makes the streaming sta
 - [x] Prompt engineering for reliable categorised output (structured tool use)
 - [x] GitHub PR URL → diff fetch → review with per-file attribution
 - [ ] Shiki syntax highlighting in the left pane
-- [ ] Deploy to Vercel and add a public demo link
+- [x] Deploy to Vercel and add a public demo link
 - [ ] Optional: persist reviews so re-running shows a diff between this run and the last
 
 ---
 
 ## Changelog
+
+### 2026-05-29 — License
+
+**Added**
+- MIT `LICENSE.md`.
+
+### 2026-05-29 — Analytics
+
+**Added**
+- Vercel Analytics (`@vercel/analytics`) mounted in the root layout for privacy-friendly traffic insights.
+
+### 2026-05-29 — Rate limiting
+
+**Added**
+- Rate limiting on `POST /api/review` to protect Anthropic spend: per-IP limits (default 1/min, 5/day) plus a **global daily cap** that refuses requests once the day's budget is hit, without calling the model.
+- Backed by Upstash Redis so counters are shared across serverless instances; falls back to an in-memory limiter (dev only) when Upstash isn't configured.
+- Throttled requests return `429` (`rate_limited`) or `503` (`daily_capacity_reached`) with a `Retry-After` header; limits are env-tunable (`RATE_LIMIT_PER_MINUTE`, `RATE_LIMIT_PER_DAY`, `DAILY_REVIEW_CAP`).
 
 ### 2026-05-29 — GitHub PR review + tooling
 
@@ -185,4 +221,4 @@ Design originated as a Claude Design prototype, then ported to React/Tailwind. B
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE) once added.
+MIT — see [LICENSE](LICENSE.md).
