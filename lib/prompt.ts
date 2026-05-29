@@ -82,8 +82,7 @@ export const TOOLS: Anthropic.Messages.Tool[] = [
         },
         suggestions: {
           type: "integer",
-          description:
-            "Count of style findings (improvements, not blockers).",
+          description: "Count of style findings (improvements, not blockers).",
         },
         positives: {
           type: "integer",
