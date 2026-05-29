@@ -81,7 +81,8 @@ It's a deliberate counterpoint to a warmer companion project of mine. Same desig
 | Streaming | Server-Sent Events from a Route Handler | Simpler than WebSockets for one-way streams |
 | GitHub | REST API; user-supplied token for private repos | Public anonymous, private with the user's own token |
 | Tooling | Biome (lint + format) | Single fast binary, no ESLint/Prettier split |
-| Deployment | Vercel (planned) | |
+| Database | Neon Postgres + Drizzle ORM | Serverless Postgres; type-safe schema + SQL migrations |
+| Deployment | Vercel | |
 
 ---
 
@@ -136,7 +137,10 @@ UPSTASH_REDIS_REST_TOKEN=
 # RATE_LIMIT_PER_MINUTE=1   # optional limit overrides (defaults shown)
 # RATE_LIMIT_PER_DAY=5
 # DAILY_REVIEW_CAP=20
+DATABASE_URL=               # Postgres for accounts/billing/usage — https://neon.tech/
 ```
+
+After setting `DATABASE_URL`, apply the schema with `npm run db:migrate` (migrations are generated from `lib/db/schema.ts` via `npm run db:generate`).
 
 `ANTHROPIC_API_KEY` is the only strictly required variable. There is **no** server-side GitHub token: public PRs are fetched anonymously, and a private-repo review uses a token the user pastes into the UI for that single request (never stored, logged, or sent to the model).
 
@@ -154,7 +158,14 @@ app/
   api/
     review/
       route.ts            # POST handler, returns text/event-stream
+lib/
+  db/
+    schema.ts             # Drizzle schema (auth + subscription + usage)
+    index.ts              # Neon-backed Drizzle client
+  tiers.ts                # pricing model: tiers, model access, credit math
+drizzle/                  # generated SQL migrations
 .env.example              # Required env var template
+drizzle.config.ts         # drizzle-kit config
 next.config.ts            # turbopack.root pinned to project
 ```
 
@@ -174,6 +185,12 @@ The UI is intentionally a single client component — it makes the streaming sta
 ---
 
 ## Changelog
+
+### 2026-05-29 — Pricing model + database foundation
+
+**Added**
+- Pricing/tier model (`lib/tiers.ts`): Free / Lite / Pro, model→tier access (Haiku / Sonnet / Opus), per-tier effort, and cost-aware credit math (each review deducts its real token cost). Unit-tested.
+- Database foundation: Neon Postgres + Drizzle ORM. Schema covers the auth-adapter tables (`user` / `account` / `session` / `verificationToken`) plus `subscription` and `usage_event`, with the first generated SQL migration. Scripts: `db:generate`, `db:migrate`, `db:studio`.
 
 ### 2026-05-29 — License
 
