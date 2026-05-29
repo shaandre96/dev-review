@@ -83,6 +83,7 @@ It's a deliberate counterpoint to a warmer companion project of mine. Same desig
 | Tooling | Biome (lint + format) | Single fast binary, no ESLint/Prettier split |
 | Database | Neon Postgres + Drizzle ORM | Serverless Postgres; type-safe schema + SQL migrations |
 | Auth | Auth.js v5 (Google + GitHub OAuth) | Database-backed sessions via the Drizzle adapter |
+| Payments | Stripe (Checkout + Customer Portal + webhooks) | Hosted checkout; subscription state synced via webhook |
 | Deployment | Vercel | |
 
 ---
@@ -144,11 +145,15 @@ AUTH_GITHUB_ID=             # GitHub OAuth app; callback <origin>/api/auth/callb
 AUTH_GITHUB_SECRET=
 AUTH_GOOGLE_ID=             # Google OAuth client; redirect <origin>/api/auth/callback/google
 AUTH_GOOGLE_SECRET=
+STRIPE_SECRET_KEY=          # Stripe test-mode secret key
+STRIPE_PRICE_LITE=          # recurring monthly price ids (Stripe Dashboard)
+STRIPE_PRICE_PRO=
+STRIPE_WEBHOOK_SECRET=      # `stripe listen --forward-to localhost:3000/api/stripe/webhook`
 ```
 
 After setting `DATABASE_URL`, apply the schema with `npm run db:migrate` (migrations are generated from `lib/db/schema.ts` via `npm run db:generate`).
 
-Auth (accounts) needs `AUTH_SECRET` plus the Google and GitHub OAuth credentials above; without them, sign-in is disabled but anonymous reviews still work.
+Auth (accounts) needs `AUTH_SECRET` plus the Google and GitHub OAuth credentials above; without them, sign-in is disabled but anonymous reviews still work. Payments need the `STRIPE_*` vars and two recurring prices created in the Stripe Dashboard; for local webhooks, run the Stripe CLI listener shown above.
 
 `ANTHROPIC_API_KEY` is the only strictly required variable. There is **no** server-side GitHub token: public PRs are fetched anonymously, and a private-repo review uses a token the user pastes into the UI for that single request (never stored, logged, or sent to the model).
 
@@ -172,11 +177,15 @@ app/
     review/route.ts       # Review SSE handler
     auth/[...nextauth]/route.ts   # Auth.js handlers
     account/route.ts      # DELETE — account deletion
+    checkout/route.ts     # Stripe Checkout redirect
+    portal/route.ts       # Stripe Customer Portal redirect
+    stripe/webhook/route.ts       # Stripe webhook → subscription sync
 auth.ts                   # Auth.js v5 config (providers, adapter, session)
 lib/
   db/                     # Drizzle schema + Neon client
   tiers.ts                # pricing model: tiers, model access, credit math
   entitlements.ts         # tier resolution from the subscription table
+  stripe.ts               # Stripe client + price↔tier mapping
 drizzle/                  # generated SQL migrations
 ```
 
@@ -196,6 +205,16 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 ---
 
 ## Changelog
+
+### 2026-05-30 — Stripe billing
+
+**Added**
+- Stripe Checkout for Lite/Pro (`/api/checkout`), Customer Portal (`/api/portal`), and a signature-verified webhook (`/api/stripe/webhook`) that syncs `subscription` tier/status/period from Stripe events.
+- `lib/stripe.ts` — lazy client + price↔tier mapping (unit-tested). Pricing-card CTAs start checkout (sign-in first if needed); the account page gains a Billing section.
+- Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_LITE/PRO`, `STRIPE_WEBHOOK_SECRET`).
+
+**Changed**
+- The `/review` logo now links back to the landing page.
 
 ### 2026-05-29 — Landing page + pricing, terminal moved to /review
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { TIERS } from "@/lib/tiers";
 import { AuthControl } from "./_components/auth-control";
+import { CheckoutButton } from "./_components/checkout-button";
 
 export const metadata: Metadata = {
   title: "DevReview — AI code review in a terminal",
@@ -131,16 +132,20 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href={card.cta.href}
-                className={`mt-6 text-center px-4 py-[10px] text-[13px] no-underline border ${
-                  card.highlight
-                    ? "border-[#50FA7B] bg-[rgba(80,250,123,0.08)] text-[#50FA7B] hover:bg-[rgba(80,250,123,0.14)]"
-                    : "border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2]"
-                }`}
-              >
-                {card.cta.label}
-              </Link>
+              {card.id === "free" ? (
+                <Link
+                  href={card.cta.href}
+                  className="mt-6 text-center px-4 py-[10px] text-[13px] no-underline border border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2]"
+                >
+                  {card.cta.label}
+                </Link>
+              ) : (
+                <CheckoutButton
+                  tier={card.id}
+                  label={card.cta.label}
+                  highlight={card.highlight}
+                />
+              )}
             </div>
           ))}
         </div>

@@ -33,6 +33,7 @@
  *        }
  */
 
+import Link from "next/link";
 import {
   type KeyboardEvent,
   useCallback,
@@ -494,10 +495,13 @@ export default function Page() {
     >
       {/* TOP BAR */}
       <header className="grid grid-cols-[1fr_auto_1fr] items-center px-[14px] border-b border-[#2A2A2A] bg-[#0D0D0D]">
-        <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#D4D4D4]">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#D4D4D4] no-underline hover:text-[#F8F8F2]"
+        >
           <span className="inline-block w-[6px] h-[6px] bg-[#F8F8F2]" />
           dev<span className="font-normal text-[#6C7280]">·</span>review
-        </div>
+        </Link>
 
         <div
           role="tablist"
