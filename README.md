@@ -116,12 +116,19 @@ npm run dev                       # http://localhost:3000
 Environment variables (`.env.local`):
 
 ```
-ANTHROPIC_API_KEY=     # required — https://console.anthropic.com/
-# ANTHROPIC_MODEL=     # optional, defaults to claude-opus-4-7
-# ANTHROPIC_EFFORT=    # optional, defaults to high (low|medium|high|xhigh|max)
+ANTHROPIC_API_KEY=          # required — https://console.anthropic.com/
+# ANTHROPIC_MODEL=          # optional, defaults to claude-opus-4-7
+# ANTHROPIC_EFFORT=         # optional, defaults to high (low|medium|high|xhigh|max)
+UPSTASH_REDIS_REST_URL=     # rate limiting — free DB at https://upstash.com/
+UPSTASH_REDIS_REST_TOKEN=
+# RATE_LIMIT_PER_MINUTE=1   # optional limit overrides (defaults shown)
+# RATE_LIMIT_PER_DAY=5
+# DAILY_REVIEW_CAP=20
 ```
 
-`ANTHROPIC_API_KEY` is the only required variable. There is **no** server-side GitHub token: public PRs are fetched anonymously, and a private-repo review uses a token the user pastes into the UI for that single request (never stored, logged, or sent to the model).
+`ANTHROPIC_API_KEY` is the only strictly required variable. There is **no** server-side GitHub token: public PRs are fetched anonymously, and a private-repo review uses a token the user pastes into the UI for that single request (never stored, logged, or sent to the model).
+
+The `UPSTASH_*` vars enable rate limiting (per-IP limits + a global daily cap) across serverless instances. Without them the app falls back to an in-memory limiter that works locally but is **not** enforceable in production. The global cap smooths spend under your **Anthropic Console monthly limit** — set that limit too; it is the hard ceiling.
 
 ---
 
@@ -155,6 +162,13 @@ The UI is intentionally a single client component — it makes the streaming sta
 ---
 
 ## Changelog
+
+### 2026-05-29 — Rate limiting
+
+**Added**
+- Rate limiting on `POST /api/review` to protect Anthropic spend: per-IP limits (default 1/min, 5/day) plus a **global daily cap** that refuses requests once the day's budget is hit, without calling the model.
+- Backed by Upstash Redis so counters are shared across serverless instances; falls back to an in-memory limiter (dev only) when Upstash isn't configured.
+- Throttled requests return `429` (`rate_limited`) or `503` (`daily_capacity_reached`) with a `Retry-After` header; limits are env-tunable (`RATE_LIMIT_PER_MINUTE`, `RATE_LIMIT_PER_DAY`, `DAILY_REVIEW_CAP`).
 
 ### 2026-05-29 — GitHub PR review + tooling
 
