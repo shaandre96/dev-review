@@ -206,6 +206,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — One-click checkout sign-in
+
+**Fixed**
+- Pricing-card sign-in carries the tier intent through OAuth: clicking Lite/Pro while signed out redirects straight to checkout after sign-in (single click, not two). The `/signin` page now honours a `callbackUrl` query param, and the account / portal / checkout redirects send users back to their original destination.
+
 ### 2026-05-30 — Model selection + cost-aware metering
 
 **Added**

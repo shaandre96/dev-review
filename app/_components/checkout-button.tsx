@@ -19,10 +19,13 @@ export function CheckoutButton({
   const { status } = useSession();
 
   function onClick() {
+    const destination = `/api/checkout?tier=${tier}`;
     if (status === "authenticated") {
-      window.location.href = `/api/checkout?tier=${tier}`;
+      window.location.href = destination;
     } else {
-      void signIn(undefined, { callbackUrl: "/#pricing" });
+      // After sign-in, Auth.js redirects to this callbackUrl which auto-starts
+      // checkout — so it's a single click for the user, not two.
+      void signIn(undefined, { callbackUrl: destination });
     }
   }
 

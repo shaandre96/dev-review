@@ -2,8 +2,18 @@
 
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 export default function SignInPage() {
+  // Honour the `callbackUrl` query param set by signIn() callers (e.g. the
+  // pricing CheckoutButton routes here with callbackUrl=/api/checkout?tier=…).
+  const [callbackUrl, setCallbackUrl] = useState("/review");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const cb = new URL(window.location.href).searchParams.get("callbackUrl");
+    if (cb) setCallbackUrl(cb);
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#0D0D0D] text-[#F8F8F2] font-mono text-[13px] flex items-center justify-center px-6">
       <div className="w-full max-w-[380px]">
@@ -28,7 +38,7 @@ export default function SignInPage() {
           <div className="mt-5 flex flex-col gap-[10px]">
             <button
               type="button"
-              onClick={() => signIn("github", { callbackUrl: "/review" })}
+              onClick={() => signIn("github", { callbackUrl })}
               className="w-full px-4 py-[10px] border border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12.5px] text-left inline-flex items-center gap-[10px]"
             >
               <svg
@@ -45,7 +55,7 @@ export default function SignInPage() {
 
             <button
               type="button"
-              onClick={() => signIn("google", { callbackUrl: "/review" })}
+              onClick={() => signIn("google", { callbackUrl })}
               className="w-full px-4 py-[10px] border border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12.5px] text-left inline-flex items-center gap-[10px]"
             >
               <span

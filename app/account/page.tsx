@@ -15,7 +15,8 @@ export default async function AccountPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user) redirect("/signin");
+  if (!session?.user)
+    redirect(`/signin?callbackUrl=${encodeURIComponent("/account")}`);
 
   const tier = TIERS[session.user.tier ?? "free"];
   const { status } = await searchParams;

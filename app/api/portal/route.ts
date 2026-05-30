@@ -11,7 +11,10 @@ export async function GET(req: Request) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) {
-    return Response.redirect(new URL("/signin", url));
+    const self = url.pathname + url.search;
+    return Response.redirect(
+      new URL(`/signin?callbackUrl=${encodeURIComponent(self)}`, url),
+    );
   }
 
   const [sub] = await getDb()
