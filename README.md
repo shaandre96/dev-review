@@ -206,6 +206,12 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Change plan from the account page
+
+**Added**
+- Upgrade/downgrade between paid tiers from `/account`: a "Switch to Pro / Lite" button calls `POST /api/subscription/change` which updates the Stripe subscription's price (Stripe handles proration) and eagerly mirrors the new tier into the DB so the UI refreshes without waiting for the webhook.
+- Cancellations, payment methods, and invoices remain in the Customer Portal.
+
 ### 2026-05-30 — Drop straight into the terminal after subscribing
 
 **Changed**

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { TIERS } from "@/lib/tiers";
+import { ChangePlanButton } from "./change-plan-button";
 import { DeleteAccountButton } from "./delete-button";
 
 export const metadata: Metadata = {
@@ -60,7 +61,22 @@ export default async function AccountPage({
           <h2 className="text-[12px] text-[#6C7280] uppercase tracking-[0.04em]">
             Billing
           </h2>
-          <div className="mt-2 inline-flex gap-3">
+          <div className="mt-2 inline-flex flex-wrap gap-3 items-start">
+            {tier.id === "lite" && (
+              <ChangePlanButton
+                to="pro"
+                label="Upgrade to Pro — $29/mo"
+                prompt="Switch to Pro? You'll get Opus and the higher monthly credit allowance. Stripe will charge a prorated difference now."
+                primary
+              />
+            )}
+            {tier.id === "pro" && (
+              <ChangePlanButton
+                to="lite"
+                label="Switch to Lite — $9/mo"
+                prompt="Switch down to Lite? You'll lose access to Opus and the larger monthly allowance. Stripe will apply a prorated credit toward your next invoice."
+              />
+            )}
             {/* plain anchors (not prefetched) — these routes create Stripe sessions */}
             <a
               href="/api/portal"
@@ -77,6 +93,10 @@ export default async function AccountPage({
               </Link>
             )}
           </div>
+          <p className="mt-2 text-[#6C7280] text-[11px] leading-[1.6]">
+            Cancellations, payment-method updates, and invoices are in{" "}
+            <span className="text-[#C8CCD2]">Manage billing</span>.
+          </p>
         </section>
 
         <section className="mt-10 border-l-2 border-[#FF5555] pl-4">
