@@ -6,10 +6,40 @@
     monospace;
 }
 
+/* Palette — Dracula-leaning, dark terminal. Tailwind v4 turns each --color-*
+   into matching `bg-*`, `text-*`, `border-*`, `placeholder-*`, etc. utilities. */
+@theme {
+  --color-bg: #0d0d0d;
+  --color-surface: #161616;
+  --color-surface-2: #1a1a1a;
+  --color-code: #1e1e1e;
+  --color-control: #1f1f1f;
+  --color-control-hover: #232323;
+
+  --color-line: #2a2a2a;
+  --color-line-soft: #1f1f1f;
+
+  --color-fg: #f8f8f2;
+  --color-fg-strong: #d4d4d4;
+  --color-fg-soft: #c8ccd2;
+  --color-fg-faded: #b6bac1;
+  --color-muted: #8a8f98;
+  --color-dim: #6c7280;
+  --color-dimmer: #4a4d54;
+  --color-faint: #3d4046;
+
+  --color-dv-red: #ff5555;
+  --color-dv-amber: #ffb86c;
+  --color-dv-yellow: #f1fa8c;
+  --color-dv-green: #50fa7b;
+  --color-dv-blue: #7ab7ff;
+  --color-dv-cyan: #7dd3fc;
+}
+
 html,
 body {
-  background: #0d0d0d;
-  color: #f8f8f2;
+  background: var(--color-bg);
+  color: var(--color-fg);
 }
 
 body {

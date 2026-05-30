@@ -18,7 +18,9 @@
  * pure helpers (clientIp, MemoryWindow, time helpers) run under `node --test`.
  */
 
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+// relative import keeps lib/ratelimit.ts importable from node:test
+import { getRedis } from "./redis.ts";
 
 const PER_MINUTE = toPositiveInt(process.env.RATE_LIMIT_PER_MINUTE, 1);
 const PER_DAY = toPositiveInt(process.env.RATE_LIMIT_PER_DAY, 5);
@@ -84,18 +86,7 @@ export class MemoryWindow {
   }
 }
 
-let _redis: Redis | null = null;
 let _warned = false;
-function redis(): Redis | null {
-  if (_redis) return _redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (url && token) {
-    _redis = new Redis({ url, token });
-    return _redis;
-  }
-  return null;
-}
 
 // Per-instance fallback windows (only used when Redis is absent).
 const memMinute = new MemoryWindow(PER_MINUTE, 60_000);
@@ -143,7 +134,7 @@ export async function enforceReviewLimits(
   headers: Headers,
 ): Promise<RateDecision> {
   const ip = clientIp(headers);
-  const r = redis();
+  const r = getRedis();
 
   if (r) {
     const day = utcDateKey();
@@ -183,4 +174,29 @@ export async function enforceReviewLimits(
 function toPositiveInt(value: string | undefined, fallback: number): number {
   const n = Number(value);
   return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+
+/**
+ * Per-user-per-minute limit for paid tiers. Free is governed by
+ * enforceReviewLimits (IP-based). Returns ok in dev when Redis isn't
+ * configured — paid users are bounded by their monthly credit budget there.
+ */
+export async function enforceUserMinuteLimit(
+  userId: string,
+  perMinute: number,
+): Promise<RateDecision> {
+  if (perMinute <= 0) return { ok: true };
+  const r = getRedis();
+  if (!r) return { ok: true };
+  const count = await redisHit(r, `rl:user-min:${userId}`, 60);
+  if (count > perMinute) {
+    return {
+      ok: false,
+      status: 429,
+      code: "rate_limited",
+      message: `Rate limit reached (${perMinute}/min). Try again in a moment.`,
+      retryAfter: 60,
+    };
+  }
+  return { ok: true };
 }
