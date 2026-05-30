@@ -3,6 +3,7 @@ import Link from "next/link";
 import { TIERS } from "@/lib/tiers";
 import { AuthControl } from "./_components/auth-control";
 import { CheckoutButton } from "./_components/checkout-button";
+import { SiteFooter } from "./_components/site-footer";
 
 export const metadata: Metadata = {
   title: "DevReview — AI code review in a terminal",
@@ -156,26 +157,7 @@ export default function LandingPage() {
         </p>
       </section>
 
-      {/* footer */}
-      <footer className="flex items-center justify-between px-6 py-4 border-t border-line text-dim text-[11px]">
-        <span>Powered by Claude</span>
-        <span className="inline-flex items-center gap-4">
-          <Link href="/terms" className="hover:text-fg no-underline text-dim">
-            Terms
-          </Link>
-          <Link href="/privacy" className="hover:text-fg no-underline text-dim">
-            Privacy
-          </Link>
-          <a
-            href="https://github.com/shaandre96/dev-review"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-fg no-underline text-dim"
-          >
-            View source
-          </a>
-        </span>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

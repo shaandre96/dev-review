@@ -206,7 +206,10 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
-### 2026-05-30 — Shared prose components
+### 2026-05-30 — Shared `<SiteFooter>` and prose components
+
+**Changed**
+- `<SiteFooter>` (Powered by Claude · Terms · Privacy · View source) extracted into `app/_components/site-footer.tsx` and used by both `/` and `/review`. Both footers now have the same look (including the GitHub mark).
 
 **Changed**
 - `Section`, `Em`, `Code` extracted from `/privacy` and `/terms` into `app/_components/prose.tsx`; both pages now import them instead of redeclaring identical helpers.
