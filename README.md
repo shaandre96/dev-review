@@ -224,6 +224,12 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Styled error + 404 pages
+
+**Added**
+- `app/error.tsx` — top-level route error boundary with retry + back-to-home, and a console hook for future error reporting.
+- `app/not-found.tsx` — branded 404 page (404 → home / terminal).
+
 ### 2026-05-30 — OG image + richer metadata
 
 **Added**
