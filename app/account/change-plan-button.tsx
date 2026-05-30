@@ -49,14 +49,14 @@ export function ChangePlanButton({
         disabled={busy}
         className={`px-4 py-[8px] border text-[12.5px] disabled:opacity-50 ${
           primary
-            ? "border-[#50FA7B] bg-[rgba(80,250,123,0.08)] text-[#50FA7B] hover:bg-[rgba(80,250,123,0.14)]"
-            : "border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2]"
+            ? "border-dv-green bg-[rgba(80,250,123,0.08)] text-dv-green hover:bg-[rgba(80,250,123,0.14)]"
+            : "border-line bg-control hover:bg-control-hover text-fg"
         }`}
       >
         {busy ? "Updating…" : label}
       </button>
       {error && (
-        <p className="mt-2 text-[#FF5555] text-[11.5px]" role="alert">
+        <p className="mt-2 text-dv-red text-[11.5px]" role="alert">
           {error}
         </p>
       )}

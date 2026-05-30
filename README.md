@@ -206,6 +206,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Tailwind theme tokens
+
+**Changed**
+- Palette moved into a Tailwind v4 `@theme` block in `app/globals.css` and the project swept to use the resulting utilities (`bg-bg`, `text-fg`, `border-line`, `text-dv-red`, …) instead of arbitrary hex utilities like `bg-[#0D0D0D]`. ~310 instances across ~20 files. No visual change — the token values match the original hex.
+
 ### 2026-05-30 — Cancel Stripe before account deletion (+ contingency)
 
 **Fixed**

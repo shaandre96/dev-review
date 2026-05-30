@@ -63,12 +63,12 @@ function priceLabel(id: Card["id"]): string {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-[#F8F8F2] font-mono text-[13px]">
+    <div className="min-h-screen bg-bg text-fg font-mono text-[13px]">
       {/* top nav */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-[#2A2A2A]">
-        <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#D4D4D4]">
-          <span className="inline-block w-[6px] h-[6px] bg-[#F8F8F2]" />
-          dev<span className="font-normal text-[#6C7280]">·</span>review
+      <header className="flex items-center justify-between px-6 py-4 border-b border-line">
+        <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-fg-strong">
+          <span className="inline-block w-[6px] h-[6px] bg-fg" />
+          dev<span className="font-normal text-dim">·</span>review
         </div>
         <AuthControl />
       </header>
@@ -77,9 +77,9 @@ export default function LandingPage() {
       <section className="mx-auto max-w-[820px] px-6 pt-20 pb-14 text-center">
         <h1 className="text-[32px] leading-[1.2] font-semibold tracking-[-0.01em]">
           Code review,
-          <span className="text-[#50FA7B]"> streamed like a terminal.</span>
+          <span className="text-dv-green"> streamed like a terminal.</span>
         </h1>
-        <p className="mx-auto mt-4 max-w-[560px] text-[#8A8F98] text-[14px] leading-[1.7]">
+        <p className="mx-auto mt-4 max-w-[560px] text-muted text-[14px] leading-[1.7]">
           Paste a function, file, or GitHub PR. Get a structured, categorised
           review — security, performance, style — streamed back line by line,
           powered by Claude.
@@ -87,13 +87,13 @@ export default function LandingPage() {
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link
             href="/review"
-            className="px-5 py-[10px] bg-[#1F1F1F] border border-[#2A2A2A] hover:bg-[#232323] text-[#F8F8F2] text-[13px] no-underline"
+            className="px-5 py-[10px] bg-control border border-line hover:bg-control-hover text-fg text-[13px] no-underline"
           >
             Open the terminal →
           </Link>
           <Link
             href="#pricing"
-            className="px-5 py-[10px] text-[#8A8F98] hover:text-[#F8F8F2] text-[13px] no-underline"
+            className="px-5 py-[10px] text-muted hover:text-fg text-[13px] no-underline"
           >
             View pricing
           </Link>
@@ -106,28 +106,28 @@ export default function LandingPage() {
           {CARDS.map((card) => (
             <div
               key={card.id}
-              className={`flex flex-col border bg-[#161616] p-6 ${
-                card.highlight ? "border-[#50FA7B]" : "border-[#2A2A2A]"
+              className={`flex flex-col border bg-surface p-6 ${
+                card.highlight ? "border-dv-green" : "border-line"
               }`}
             >
               <div className="flex items-baseline justify-between">
                 <span className="text-[14px] font-semibold uppercase tracking-[0.04em]">
                   {TIERS[card.id].label}
                 </span>
-                <span className="text-[#8A8F98] text-[12px]">
-                  <span className="text-[#F8F8F2] text-[16px] font-semibold">
+                <span className="text-muted text-[12px]">
+                  <span className="text-fg text-[16px] font-semibold">
                     {priceLabel(card.id)}
                   </span>
                   {TIERS[card.id].priceUsdMonthly > 0 ? " /mo" : ""}
                 </span>
               </div>
-              <p className="mt-2 text-[#8A8F98] text-[12px] leading-[1.6]">
+              <p className="mt-2 text-muted text-[12px] leading-[1.6]">
                 {card.tagline}
               </p>
-              <ul className="mt-4 flex-1 space-y-[6px] text-[#C8CCD2] text-[12.5px]">
+              <ul className="mt-4 flex-1 space-y-[6px] text-fg-soft text-[12.5px]">
                 {card.features.map((f) => (
                   <li key={f} className="flex gap-2">
-                    <span className="text-[#50FA7B]">→</span>
+                    <span className="text-dv-green">→</span>
                     <span>{f}</span>
                   </li>
                 ))}
@@ -135,7 +135,7 @@ export default function LandingPage() {
               {card.id === "free" ? (
                 <Link
                   href={card.cta.href}
-                  className="mt-6 text-center px-4 py-[10px] text-[13px] no-underline border border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2]"
+                  className="mt-6 text-center px-4 py-[10px] text-[13px] no-underline border border-line bg-control hover:bg-control-hover text-fg"
                 >
                   {card.cta.label}
                 </Link>
@@ -149,7 +149,7 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
-        <p className="mt-5 text-center text-[#6C7280] text-[11.5px]">
+        <p className="mt-5 text-center text-dim text-[11.5px]">
           Paid plans require an account — sign in to get set up. Credits are
           cost-based, so you can spend a plan&apos;s monthly allowance across
           any model you&apos;re entitled to.
@@ -157,26 +157,20 @@ export default function LandingPage() {
       </section>
 
       {/* footer */}
-      <footer className="flex items-center justify-between px-6 py-4 border-t border-[#2A2A2A] text-[#6C7280] text-[11px]">
+      <footer className="flex items-center justify-between px-6 py-4 border-t border-line text-dim text-[11px]">
         <span>Powered by Claude</span>
         <span className="inline-flex items-center gap-4">
-          <Link
-            href="/terms"
-            className="hover:text-[#F8F8F2] no-underline text-[#6C7280]"
-          >
+          <Link href="/terms" className="hover:text-fg no-underline text-dim">
             Terms
           </Link>
-          <Link
-            href="/privacy"
-            className="hover:text-[#F8F8F2] no-underline text-[#6C7280]"
-          >
+          <Link href="/privacy" className="hover:text-fg no-underline text-dim">
             Privacy
           </Link>
           <a
             href="https://github.com/shaandre96/dev-review"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-[#F8F8F2] no-underline text-[#6C7280]"
+            className="hover:text-fg no-underline text-dim"
           >
             View source
           </a>

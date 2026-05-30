@@ -11,37 +11,35 @@ const UPDATED = "29 May 2026";
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-[#0D0D0D] text-[#F8F8F2] font-mono text-[13px] leading-[1.7]">
+    <main className="min-h-screen bg-bg text-fg font-mono text-[13px] leading-[1.7]">
       <div className="mx-auto max-w-[760px] px-6 py-12">
         <Link
           href="/"
-          className="text-[#6C7280] text-[11.5px] hover:text-[#F8F8F2] no-underline"
+          className="text-dim text-[11.5px] hover:text-fg no-underline"
         >
           ← back to dev·review
         </Link>
 
-        <h1 className="mt-6 text-[20px] font-semibold text-[#F8F8F2]">
+        <h1 className="mt-6 text-[20px] font-semibold text-fg">
           Privacy Policy
         </h1>
-        <p className="mt-1 text-[#6C7280] text-[11.5px]">
-          Last updated: {UPDATED}
-        </p>
+        <p className="mt-1 text-dim text-[11.5px]">Last updated: {UPDATED}</p>
 
-        <p className="mt-6 text-[#C8CCD2]">
+        <p className="mt-6 text-fg-soft">
           DevReview is a commercial code-review service operated by Andre Sha.
           You paste a snippet or point it at a GitHub pull request and it
           streams back an AI-generated review. You can use it anonymously, or
           sign in to subscribe to a paid plan. This page describes exactly what
           the service does with what you provide; it reflects the live service,
           not boilerplate. The legal terms are in our{" "}
-          <Link href="/terms" className="underline hover:text-[#F8F8F2]">
+          <Link href="/terms" className="underline hover:text-fg">
             Terms &amp; Conditions
           </Link>
           .
         </p>
 
         <Section title="The short version">
-          <ul className="list-disc pl-5 space-y-1 text-[#C8CCD2]">
+          <ul className="list-disc pl-5 space-y-1 text-fg-soft">
             <li>
               Anonymous reviews need no account; your code/diff is processed to
               serve the request and is not stored by us.
@@ -72,7 +70,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="What you submit, and where it goes">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             <Em>Pasted code.</Em> When you start a review, your browser sends
             the pasted text and a detected language label to our server endpoint
             (<Code>/api/review</Code>). The server embeds that text in a prompt
@@ -80,7 +78,7 @@ export default function PrivacyPage() {
             findings back to your browser. The submitted text is held only for
             the duration of the request.
           </p>
-          <p className="mt-3 text-[#C8CCD2]">
+          <p className="mt-3 text-fg-soft">
             <Em>Pull requests.</Em> When you submit a GitHub PR URL, the server
             parses it and requests the unified diff from{" "}
             <Code>api.github.com</Code>. That diff is then reviewed the same way
@@ -90,7 +88,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="GitHub tokens">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             Public repositories need no token. To review a PR in a{" "}
             <Em>private</Em> repository, you may supply your own GitHub token.
             It is held in page memory only (never written to{" "}
@@ -102,11 +100,11 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Accounts">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             Anonymous use requires no account. If you sign in with Google or
             GitHub (to subscribe to a Lite or Pro plan), we store:
           </p>
-          <ul className="mt-3 list-disc pl-5 space-y-1 text-[#C8CCD2]">
+          <ul className="mt-3 list-disc pl-5 space-y-1 text-fg-soft">
             <li>your email, display name, and avatar URL from the provider;</li>
             <li>an identifier linking your account to that provider;</li>
             <li>a session record plus a cookie that keeps you signed in;</li>
@@ -115,7 +113,7 @@ export default function PrivacyPage() {
               counts, and cost) for billing and quota enforcement.
             </li>
           </ul>
-          <p className="mt-3 text-[#C8CCD2]">
+          <p className="mt-3 text-fg-soft">
             We never receive your Google or GitHub password. You can permanently
             delete your account and this data at any time from the{" "}
             <Em>Account</Em> page.
@@ -123,11 +121,11 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Third parties">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             Running the service shares data with a few providers, each governed
             by its own terms and privacy policy:
           </p>
-          <ul className="mt-3 list-disc pl-5 space-y-1 text-[#C8CCD2]">
+          <ul className="mt-3 list-disc pl-5 space-y-1 text-fg-soft">
             <li>
               <Em>Anthropic</Em> — receives the code or diff you submit, to
               generate the review.
@@ -157,7 +155,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Caching and review storage">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             Review outputs are not cached or stored, and the GitHub diff fetch
             is marked no-store. For signed-in users we keep only{" "}
             <Em>usage metadata</Em> — model, token counts, and cost per review —
@@ -169,13 +167,13 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Cookies, analytics, and logs">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             The only cookie this app sets is the Auth.js session cookie, and
             only after you sign in. Analytics are provided by Vercel Analytics,
             which is aggregate and cookieless — no advertising or cross-site
             tracking.
           </p>
-          <p className="mt-3 text-[#8A8F98] text-[12px]">
+          <p className="mt-3 text-muted text-[12px]">
             Note: the hosting provider (Vercel) may record standard operational
             request logs — IP address, timestamp, response status — as part of
             serving traffic. That logging is the provider&apos;s and is governed
@@ -184,7 +182,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Deleting your data">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             Anonymous use leaves nothing to delete beyond transient rate-limit
             counters that expire on their own. If you have an account, deleting
             it from the <Em>Account</Em> page removes your profile, login
@@ -196,7 +194,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Demo mode">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             Loading the app with <Code>?demo=1</Code> replays a canned, built-in
             review for screenshots and offline demos. In demo mode no code is
             sent anywhere — there is no network call to Anthropic or GitHub.
@@ -204,14 +202,14 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Changes and contact">
-          <p className="text-[#C8CCD2]">
+          <p className="text-fg-soft">
             If the data practices above change, this page will be updated along
             with the &quot;last updated&quot; date. Questions about this policy
             can be directed to the project maintainer.
           </p>
         </Section>
 
-        <p className="mt-10 text-[#4A4D54] text-[11px]">
+        <p className="mt-10 text-dimmer text-[11px]">
           DevReview is operated as a commercial service by Andre Sha (sole
           trader), Victoria, Australia.
         </p>
@@ -229,7 +227,7 @@ function Section({
 }) {
   return (
     <section className="mt-8">
-      <h2 className="text-[14px] font-semibold text-[#F8F8F2] lowercase tracking-[0.02em]">
+      <h2 className="text-[14px] font-semibold text-fg lowercase tracking-[0.02em]">
         {title}
       </h2>
       <div className="mt-2">{children}</div>
@@ -238,12 +236,12 @@ function Section({
 }
 
 function Em({ children }: { children: React.ReactNode }) {
-  return <span className="text-[#F8F8F2] font-semibold">{children}</span>;
+  return <span className="text-fg font-semibold">{children}</span>;
 }
 
 function Code({ children }: { children: React.ReactNode }) {
   return (
-    <code className="bg-[#1E1E1E] border border-[#1F1F1F] rounded-[2px] px-[4px] text-[#C8CCD2]">
+    <code className="bg-code border border-line-soft rounded-[2px] px-[4px] text-fg-soft">
       {children}
     </code>
   );

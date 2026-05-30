@@ -1,36 +1,11 @@
 "use client";
 
 /**
- * DevReview — terminal-style AI code review tool
- * Next.js App Router · Tailwind CSS · single-file page component
+ * DevReview — terminal-style AI code review tool.
  *
- * Setup notes:
- *   1. Add JetBrains Mono in app/layout.tsx:
- *
- *        import { JetBrains_Mono } from "next/font/google";
- *        const jb = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
- *        // <html className={jb.variable}>…
- *
- *   2. tailwind.config.ts — extend the theme:
- *
- *        theme: {
- *          extend: {
- *            colors: {
- *              bg:        "#0D0D0D",
- *              surface:   "#161616",
- *              surface2:  "#1A1A1A",
- *              border1:   "#2A2A2A",
- *              borderSoft:"#1F1F1F",
- *              text1:     "#F8F8F2",
- *              muted:     "#6C7280",
- *              muted2:    "#8A8F98",
- *              dvRed:     "#FF5555",
- *              dvAmber:   "#FFB86C",
- *              dvGreen:   "#50FA7B",
- *            },
- *            fontFamily: { mono: ["var(--font-mono)", "ui-monospace", "monospace"] },
- *          },
- *        }
+ * Palette + font live in `app/globals.css` (Tailwind v4 `@theme`), exposed as
+ * `bg-bg`, `text-fg`, `border-line`, `text-dv-{red,amber,green,…}` etc. — see
+ * that file for the full token list.
  */
 
 import Link from "next/link";
@@ -140,36 +115,36 @@ const REVIEW: ReviewChunk[] = [
 ];
 
 const TAG_COLOR: Record<Tag, string> = {
-  security: "text-[#FF5555]",
-  perf: "text-[#FFB86C]",
-  style: "text-[#6C7280]",
-  good: "text-[#50FA7B]",
+  security: "text-dv-red",
+  perf: "text-dv-amber",
+  style: "text-dim",
+  good: "text-dv-green",
 };
 
 const LANG_BADGE: Record<LangKey, { label: string; cls: string }> = {
   typescript: {
     label: "TypeScript",
-    cls: "border-[#7AB7FF] text-[#7AB7FF] bg-[rgba(122,183,255,0.06)]",
+    cls: "border-dv-blue text-dv-blue bg-[rgba(122,183,255,0.06)]",
   },
   javascript: {
     label: "JavaScript",
-    cls: "border-[#F1FA8C] text-[#F1FA8C] bg-[rgba(241,250,140,0.05)]",
+    cls: "border-dv-yellow text-dv-yellow bg-[rgba(241,250,140,0.05)]",
   },
   python: {
     label: "Python",
-    cls: "border-[#F1FA8C] text-[#F1FA8C] bg-[rgba(241,250,140,0.05)]",
+    cls: "border-dv-yellow text-dv-yellow bg-[rgba(241,250,140,0.05)]",
   },
   rust: {
     label: "Rust",
-    cls: "border-[#FFB86C] text-[#FFB86C] bg-[rgba(255,184,108,0.05)]",
+    cls: "border-dv-amber text-dv-amber bg-[rgba(255,184,108,0.05)]",
   },
   go: {
     label: "Go",
-    cls: "border-[#7DD3FC] text-[#7DD3FC] bg-[rgba(125,211,252,0.05)]",
+    cls: "border-dv-cyan text-dv-cyan bg-[rgba(125,211,252,0.05)]",
   },
   plaintext: {
     label: "plaintext",
-    cls: "border-[#2A2A2A] text-[#6C7280] bg-transparent",
+    cls: "border-line text-dim bg-transparent",
   },
 };
 
@@ -183,7 +158,7 @@ function renderBody(body: string) {
       <code
         // biome-ignore lint/suspicious/noArrayIndexKey: parts come from a stable split and never reorder
         key={i}
-        className="bg-[#1E1E1E] border border-[#1F1F1F] rounded-[2px] px-[4px] text-[#C8CCD2]"
+        className="bg-code border border-line-soft rounded-[2px] px-[4px] text-fg-soft"
       >
         {p.slice(1, -1)}
       </code>
@@ -512,36 +487,36 @@ export default function Page() {
 
   return (
     <div
-      className="grid h-screen w-screen bg-[#0D0D0D] text-[#F8F8F2] font-mono text-[13px] leading-[1.55] overflow-hidden"
+      className="grid h-screen w-screen bg-bg text-fg font-mono text-[13px] leading-[1.55] overflow-hidden"
       style={{ gridTemplateRows: "44px 1fr 32px" }}
     >
       {/* TOP BAR */}
-      <header className="grid grid-cols-[1fr_auto_1fr] items-center px-[14px] border-b border-[#2A2A2A] bg-[#0D0D0D]">
+      <header className="grid grid-cols-[1fr_auto_1fr] items-center px-[14px] border-b border-line bg-bg">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#D4D4D4] no-underline hover:text-[#F8F8F2]"
+          className="inline-flex items-center gap-2 text-[13px] font-semibold text-fg-strong no-underline hover:text-fg"
         >
-          <span className="inline-block w-[6px] h-[6px] bg-[#F8F8F2]" />
-          dev<span className="font-normal text-[#6C7280]">·</span>review
+          <span className="inline-block w-[6px] h-[6px] bg-fg" />
+          dev<span className="font-normal text-dim">·</span>review
         </Link>
 
         <div
           role="tablist"
           aria-label="Input mode"
-          className="inline-flex items-center border border-[#2A2A2A] bg-[#161616]"
+          className="inline-flex items-center border border-line bg-surface"
         >
           <TabButton active={tab === "paste"} onClick={() => setTab("paste")}>
             Paste code
           </TabButton>
-          <span className="w-px self-stretch bg-[#2A2A2A]" aria-hidden />
+          <span className="w-px self-stretch bg-line" aria-hidden />
           <TabButton active={tab === "pr"} onClick={() => setTab("pr")}>
             GitHub PR URL
           </TabButton>
         </div>
 
-        <div className="justify-self-end inline-flex items-center gap-3 text-[#6C7280] text-[11.5px]">
+        <div className="justify-self-end inline-flex items-center gap-3 text-dim text-[11.5px]">
           <AuthControl />
-          <span className="w-px self-stretch bg-[#2A2A2A] my-1" aria-hidden />
+          <span className="w-px self-stretch bg-line my-1" aria-hidden />
           <span className="inline-flex items-center gap-2">
             <StatusDot reviewing={isReviewing} />
             {isReviewing ? "reviewing…" : "idle"}
@@ -553,7 +528,7 @@ export default function Page() {
       <main className="grid grid-cols-2 min-h-0">
         {/* LEFT PANE */}
         <section
-          className="bg-[#161616] grid min-h-0 min-w-0 border-r border-[#2A2A2A]"
+          className="bg-surface grid min-h-0 min-w-0 border-r border-line"
           style={{ gridTemplateRows: "36px 1fr 32px" }}
         >
           <PaneHead>
@@ -568,7 +543,7 @@ export default function Page() {
                 onChange={(e) => setModel(e.target.value as ModelId)}
                 disabled={tier.allowedModels.length <= 1}
                 title="Model"
-                className="bg-[#0D0D0D] border border-[#2A2A2A] text-[#C8CCD2] text-[11px] px-1 py-[2px] outline-none disabled:opacity-60"
+                className="bg-bg border border-line text-fg-soft text-[11px] px-1 py-[2px] outline-none disabled:opacity-60"
               >
                 {tier.allowedModels.map((m) => (
                   <option key={m} value={m}>
@@ -581,7 +556,7 @@ export default function Page() {
                   value={effort}
                   onChange={(e) => setEffort(e.target.value as Effort)}
                   title="Effort"
-                  className="bg-[#0D0D0D] border border-[#2A2A2A] text-[#C8CCD2] text-[11px] px-1 py-[2px] outline-none"
+                  className="bg-bg border border-line text-fg-soft text-[11px] px-1 py-[2px] outline-none"
                 >
                   {(["low", "medium", "high", "xhigh"] as const).map((ef) => (
                     <option key={ef} value={ef}>
@@ -590,10 +565,10 @@ export default function Page() {
                   ))}
                 </select>
               ) : (
-                <span className="text-[#4A4D54] text-[11px]">{effort}</span>
+                <span className="text-dimmer text-[11px]">{effort}</span>
               )}
             </span>
-            <span className="text-[#6C7280] text-[11.5px] whitespace-nowrap">
+            <span className="text-dim text-[11.5px] whitespace-nowrap">
               <Kbd>⌘</Kbd>
               <Kbd>↵</Kbd>
               <span className="ml-1">to review</span>
@@ -607,7 +582,7 @@ export default function Page() {
             >
               <div
                 ref={gutterRef}
-                className="bg-[#161616] border-r border-[#1F1F1F] text-[#3F4148] text-[12px] text-right pr-2 pt-[10px] select-none overflow-hidden whitespace-pre leading-[1.55]"
+                className="bg-surface border-r border-line-soft text-[#3F4148] text-[12px] text-right pr-2 pt-[10px] select-none overflow-hidden whitespace-pre leading-[1.55]"
               >
                 {gutterText}
               </div>
@@ -621,17 +596,17 @@ export default function Page() {
                 autoCapitalize="off"
                 autoCorrect="off"
                 placeholder="// Paste a function, file, or diff…"
-                className="w-full h-full bg-transparent text-[#F8F8F2] font-mono text-[13px] leading-[1.55] resize-none border-0 outline-none whitespace-pre overflow-auto px-3 pt-[10px] pb-6 placeholder-[#3D4046]"
+                className="w-full h-full bg-transparent text-fg font-mono text-[13px] leading-[1.55] resize-none border-0 outline-none whitespace-pre overflow-auto px-3 pt-[10px] pb-6 placeholder-faint"
                 style={{ tabSize: 2, caretColor: "#50FA7B" }}
               />
             </div>
           ) : (
             <div className="flex flex-col gap-[14px] p-6 overflow-auto">
               <div>
-                <div className="text-[#6C7280] text-[11.5px] mb-[6px]">
+                <div className="text-dim text-[11.5px] mb-[6px]">
                   github pull request url
                 </div>
-                <div className="grid grid-cols-[1fr_auto] border border-[#2A2A2A] bg-[#0D0D0D]">
+                <div className="grid grid-cols-[1fr_auto] border border-line bg-bg">
                   <input
                     ref={prInputRef}
                     value={prUrl}
@@ -640,12 +615,12 @@ export default function Page() {
                       if (e.key === "Enter") onFetchPr();
                     }}
                     placeholder="https://github.com/org/repo/pull/1234"
-                    className="px-3 py-[10px] bg-transparent text-[#F8F8F2] text-[13px] outline-none placeholder-[#3D4046]"
+                    className="px-3 py-[10px] bg-transparent text-fg text-[13px] outline-none placeholder-faint"
                   />
                   <button
                     type="button"
                     onClick={onFetchPr}
-                    className="px-[14px] border-l border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12px]"
+                    className="px-[14px] border-l border-line bg-control hover:bg-control-hover text-fg text-[12px]"
                   >
                     Fetch diff
                   </button>
@@ -653,9 +628,9 @@ export default function Page() {
               </div>
 
               <div>
-                <div className="text-[#6C7280] text-[11.5px] mb-[6px]">
+                <div className="text-dim text-[11.5px] mb-[6px]">
                   github token{" "}
-                  <span className="text-[#4A4D54]">
+                  <span className="text-dimmer">
                     — optional, only for private repos
                   </span>
                 </div>
@@ -671,13 +646,13 @@ export default function Page() {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
-                  className="w-full px-3 py-[10px] border border-[#2A2A2A] bg-[#0D0D0D] text-[#F8F8F2] text-[13px] outline-none placeholder-[#3D4046]"
+                  className="w-full px-3 py-[10px] border border-line bg-bg text-fg text-[13px] outline-none placeholder-faint"
                 />
               </div>
 
               {/* Privacy: token handling. */}
-              <div className="border-l-2 border-[#FFB86C] pl-[10px] text-[11.5px] leading-[1.7] text-[#8A8F98]">
-                <div className="text-[#FFB86C] font-semibold mb-[2px]">
+              <div className="border-l-2 border-dv-amber pl-[10px] text-[11.5px] leading-[1.7] text-muted">
+                <div className="text-dv-amber font-semibold mb-[2px]">
                   privacy
                 </div>
                 Your token is sent to our server only to fetch this diff from
@@ -686,15 +661,15 @@ export default function Page() {
                 read-only, short-lived token.{" "}
                 <a
                   href="/privacy"
-                  className="text-[#B6BAC1] underline hover:text-[#F8F8F2]"
+                  className="text-fg-faded underline hover:text-fg"
                 >
                   Privacy policy →
                 </a>
               </div>
 
               {/* No-caching disclosure. */}
-              <div className="border-l-2 border-[#2A2A2A] pl-[10px] text-[11.5px] leading-[1.7] text-[#6C7280]">
-                <div className="text-[#8A8F98] font-semibold mb-[2px]">
+              <div className="border-l-2 border-line pl-[10px] text-[11.5px] leading-[1.7] text-dim">
+                <div className="text-muted font-semibold mb-[2px]">
                   heads up
                 </div>
                 Nothing is cached. Every run fetches a fresh diff and recomputes
@@ -702,7 +677,7 @@ export default function Page() {
                 repeating the same request won&apos;t return instantly.
               </div>
 
-              <div className="text-[#6C7280] text-[11.5px] leading-[1.7]">
+              <div className="text-dim text-[11.5px] leading-[1.7]">
                 DevReview fetches the PR&apos;s unified diff and reviews the
                 changed files, attributing each finding to its file.
               </div>
@@ -710,7 +685,7 @@ export default function Page() {
           )}
 
           <PaneFoot>
-            <span className="text-[#4A4D54] text-[11px]">
+            <span className="text-dimmer text-[11px]">
               {lineCount} line{lineCount === 1 ? "" : "s"} · {charCount} char
               {charCount === 1 ? "" : "s"}
             </span>
@@ -720,11 +695,11 @@ export default function Page() {
 
         {/* RIGHT PANE */}
         <section
-          className="bg-[#161616] grid min-h-0 min-w-0"
+          className="bg-surface grid min-h-0 min-w-0"
           style={{ gridTemplateRows: "36px 1fr 32px" }}
         >
           <PaneHead>
-            <span className="text-[#8A8F98] text-[11.5px] tracking-[0.02em] lowercase">
+            <span className="text-muted text-[11.5px] tracking-[0.02em] lowercase">
               review output
             </span>
             <GhostBtn onClick={onCopy}>{copyLabel}</GhostBtn>
@@ -735,22 +710,22 @@ export default function Page() {
             className="overflow-auto px-4 pt-[14px] pb-[18px] text-[13px] leading-[1.65] whitespace-pre-wrap break-words"
           >
             {chunks.length === 0 && !error ? (
-              <div className="text-[#6C7280] text-[12.5px] leading-[1.8] space-y-1">
+              <div className="text-dim text-[12.5px] leading-[1.8] space-y-1">
                 <div>
-                  <span className="text-[#50FA7B]">→</span> Paste a file in the
+                  <span className="text-dv-green">→</span> Paste a file in the
                   left pane.
                 </div>
                 <div>
-                  <span className="text-[#50FA7B]">→</span> Press{" "}
-                  <span className="text-[#C8CCD2]">⌘ Enter</span> to start a
+                  <span className="text-dv-green">→</span> Press{" "}
+                  <span className="text-fg-soft">⌘ Enter</span> to start a
                   review.
                 </div>
                 <div>
-                  <span className="text-[#50FA7B]">→</span> Output streams here
+                  <span className="text-dv-green">→</span> Output streams here
                   line by line.
                 </div>
                 <div>
-                  <span className="text-[#50FA7B]">→</span> Nothing is cached —
+                  <span className="text-dv-green">→</span> Nothing is cached —
                   each review runs fresh, so give it a few seconds.
                 </div>
               </div>
@@ -766,27 +741,27 @@ export default function Page() {
           </div>
 
           <PaneFoot>
-            <span className="text-[#4A4D54] text-[11px]">{elapsed}</span>
+            <span className="text-dimmer text-[11px]">{elapsed}</span>
             <GhostBtn onClick={startReview}>Re-run</GhostBtn>
           </PaneFoot>
         </section>
       </main>
 
       {/* BOTTOM BAR */}
-      <footer className="flex justify-between items-center px-[14px] border-t border-[#2A2A2A] bg-[#0D0D0D] text-[#6C7280] text-[11px]">
+      <footer className="flex justify-between items-center px-[14px] border-t border-line bg-bg text-dim text-[11px]">
         <span className="inline-flex items-center gap-[8px]">
           Powered by Claude
-          <span className="text-[#2A2A2A]">·</span>
+          <span className="text-line">·</span>
           <a
             href="/terms"
-            className="text-[#6C7280] hover:text-[#F8F8F2] transition-colors no-underline"
+            className="text-dim hover:text-fg transition-colors no-underline"
           >
             Terms
           </a>
-          <span className="text-[#2A2A2A]">·</span>
+          <span className="text-line">·</span>
           <a
             href="/privacy"
-            className="text-[#6C7280] hover:text-[#F8F8F2] transition-colors no-underline"
+            className="text-dim hover:text-fg transition-colors no-underline"
           >
             Privacy
           </a>
@@ -795,7 +770,7 @@ export default function Page() {
           href="https://github.com/shaandre96/dev-review"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-[6px] text-[#6C7280] hover:text-[#F8F8F2] transition-colors no-underline"
+          className="inline-flex items-center gap-[6px] text-dim hover:text-fg transition-colors no-underline"
         >
           <svg
             viewBox="0 0 16 16"
@@ -849,9 +824,7 @@ function TabButton({
       onClick={onClick}
       className={
         "px-[14px] py-[6px] text-[12px] transition-colors select-none " +
-        (active
-          ? "bg-[#1F1F1F] text-[#F8F8F2]"
-          : "text-[#8A8F98] hover:text-[#C8CCD2]")
+        (active ? "bg-control text-fg" : "text-muted hover:text-fg-soft")
       }
     >
       {children}
@@ -864,7 +837,7 @@ function StatusDot({ reviewing }: { reviewing: boolean }) {
     <span
       className={
         "relative inline-block w-[7px] h-[7px] rounded-full transition-colors " +
-        (reviewing ? "bg-[#50FA7B] dv-pulse" : "bg-[#3A3A3A]")
+        (reviewing ? "bg-dv-green dv-pulse" : "bg-[#3A3A3A]")
       }
     />
   );
@@ -872,7 +845,7 @@ function StatusDot({ reviewing }: { reviewing: boolean }) {
 
 function PaneHead({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-[14px] border-b border-[#2A2A2A] text-[#6C7280] text-[11.5px]">
+    <div className="flex items-center justify-between px-[14px] border-b border-line text-dim text-[11.5px]">
       {children}
     </div>
   );
@@ -880,7 +853,7 @@ function PaneHead({ children }: { children: React.ReactNode }) {
 
 function PaneFoot({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-[14px] border-t border-[#2A2A2A] text-[#6C7280] text-[11.5px]">
+    <div className="flex items-center justify-between px-[14px] border-t border-line text-dim text-[11.5px]">
       {children}
     </div>
   );
@@ -897,7 +870,7 @@ function GhostBtn({
     <button
       type="button"
       onClick={onClick}
-      className="text-[#8A8F98] hover:text-[#F8F8F2] transition-colors py-1 text-[11.5px] cursor-pointer"
+      className="text-muted hover:text-fg transition-colors py-1 text-[11.5px] cursor-pointer"
     >
       {children}
     </button>
@@ -906,7 +879,7 @@ function GhostBtn({
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="font-mono text-[#C8CCD2] bg-[#1F1F1F] border border-[#2A2A2A] px-[5px] py-px rounded-[2px] mx-px">
+    <kbd className="font-mono text-fg-soft bg-control border border-line px-[5px] py-px rounded-[2px] mx-px">
       {children}
     </kbd>
   );
@@ -915,9 +888,9 @@ function Kbd({ children }: { children: React.ReactNode }) {
 function ChunkView({ chunk }: { chunk: ReviewChunk }) {
   if (chunk.kind === "header") {
     return (
-      <div className="flex gap-[10px] items-start border-l-2 border-[#2A2A2A] pl-[10px] py-[2px] mb-[14px] text-[#8A8F98]">
+      <div className="flex gap-[10px] items-start border-l-2 border-line pl-[10px] py-[2px] mb-[14px] text-muted">
         <span>analysing:</span>
-        <span className="text-[#F8F8F2]">{chunk.file}</span>
+        <span className="text-fg">{chunk.file}</span>
       </div>
     );
   }
@@ -932,14 +905,14 @@ function ChunkView({ chunk }: { chunk: ReviewChunk }) {
         >
           [{chunk.tag.toUpperCase()}]
         </span>
-        <span className="text-[#F8F8F2]">
+        <span className="text-fg">
           {chunk.file ? (
-            <span className="text-[#8A8F98]">
+            <span className="text-muted">
               {chunk.file}
               {chunk.line !== undefined ? `:${chunk.line}` : ""} —{" "}
             </span>
           ) : chunk.line !== undefined ? (
-            <span className="text-[#8A8F98]">Line {chunk.line} — </span>
+            <span className="text-muted">Line {chunk.line} — </span>
           ) : null}
           {renderBody(chunk.body)}
         </span>
@@ -949,8 +922,8 @@ function ChunkView({ chunk }: { chunk: ReviewChunk }) {
   /* summary */
   return (
     <>
-      <hr className="border-0 border-t border-[#2A2A2A] my-[18px] mb-3" />
-      <div className="text-[#8A8F98] text-[12px] flex gap-[14px] items-center">
+      <hr className="border-0 border-t border-line my-[18px] mb-3" />
+      <div className="text-muted text-[12px] flex gap-[14px] items-center">
         <span>
           <Dot color="#FF5555" /> {chunk.issues} issues
         </span>
@@ -977,15 +950,15 @@ function Dot({ color }: { color: string }) {
 function ErrorBanner({ error }: { error: ReviewError }) {
   return (
     <div
-      className="grid gap-[10px] mb-3 mt-3 border-l-2 border-[#FF5555] pl-[10px] py-[2px]"
+      className="grid gap-[10px] mb-3 mt-3 border-l-2 border-dv-red pl-[10px] py-[2px]"
       style={{ gridTemplateColumns: "92px 1fr" }}
       role="alert"
     >
-      <span className="font-semibold tracking-[0.02em] text-[#FF5555]">
+      <span className="font-semibold tracking-[0.02em] text-dv-red">
         [ERROR]
       </span>
-      <span className="text-[#F8F8F2]">
-        <span className="text-[#8A8F98]">{error.code}</span> — {error.message}
+      <span className="text-fg">
+        <span className="text-muted">{error.code}</span> — {error.message}
       </span>
     </div>
   );

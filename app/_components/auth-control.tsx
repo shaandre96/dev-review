@@ -8,14 +8,14 @@ export function AuthControl() {
   const { data: session, status } = useSession();
 
   if (status === "loading") {
-    return <span className="text-[#6C7280] text-[11.5px]">…</span>;
+    return <span className="text-dim text-[11.5px]">…</span>;
   }
 
   if (!session?.user) {
     return (
       <Link
         href="/signin"
-        className="text-[#8A8F98] hover:text-[#F8F8F2] text-[11.5px] no-underline"
+        className="text-muted hover:text-fg text-[11.5px] no-underline"
       >
         sign in
       </Link>
@@ -25,12 +25,12 @@ export function AuthControl() {
   const tier = session.user.tier ?? "free";
   return (
     <span className="inline-flex items-center gap-2 text-[11.5px]">
-      <span className="px-[6px] py-px border border-[#2A2A2A] text-[#8A8F98] uppercase tracking-[0.04em] text-[10px]">
+      <span className="px-[6px] py-px border border-line text-muted uppercase tracking-[0.04em] text-[10px]">
         {tier}
       </span>
       <Link
         href="/account"
-        className="text-[#C8CCD2] hover:text-[#F8F8F2] no-underline max-w-[160px] truncate"
+        className="text-fg-soft hover:text-fg no-underline max-w-[160px] truncate"
         title={session.user.email ?? undefined}
       >
         {session.user.email ?? session.user.name ?? "account"}
@@ -38,7 +38,7 @@ export function AuthControl() {
       <button
         type="button"
         onClick={() => signOut({ callbackUrl: "/" })}
-        className="text-[#6C7280] hover:text-[#F8F8F2]"
+        className="text-dim hover:text-fg"
       >
         sign out
       </button>

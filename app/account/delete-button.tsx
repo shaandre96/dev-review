@@ -41,17 +41,14 @@ export function DeleteAccountButton() {
         type="button"
         onClick={onDelete}
         disabled={busy}
-        className="px-4 py-[10px] border border-[#FF5555] text-[#FF5555] hover:bg-[rgba(255,85,85,0.08)] text-[12.5px] disabled:opacity-50"
+        className="px-4 py-[10px] border border-dv-red text-dv-red hover:bg-[rgba(255,85,85,0.08)] text-[12.5px] disabled:opacity-50"
       >
         {busy ? "Deleting…" : "Delete account"}
       </button>
       {error && (
-        <p className="mt-2 text-[#FF5555] text-[11.5px]" role="alert">
+        <p className="mt-2 text-dv-red text-[11.5px]" role="alert">
           {error}{" "}
-          <a
-            href="/terms"
-            className="underline text-[#FF5555] hover:text-[#F8F8F2]"
-          >
+          <a href="/terms" className="underline text-dv-red hover:text-fg">
             Contact details
           </a>
           .

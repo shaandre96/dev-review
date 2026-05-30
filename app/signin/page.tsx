@@ -15,22 +15,22 @@ export default function SignInPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#0D0D0D] text-[#F8F8F2] font-mono text-[13px] flex items-center justify-center px-6">
+    <main className="min-h-screen bg-bg text-fg font-mono text-[13px] flex items-center justify-center px-6">
       <div className="w-full max-w-[380px]">
         <Link
           href="/"
-          className="text-[#6C7280] text-[11.5px] hover:text-[#F8F8F2] no-underline"
+          className="text-dim text-[11.5px] hover:text-fg no-underline"
         >
           ← back to dev·review
         </Link>
 
-        <div className="mt-6 border border-[#2A2A2A] bg-[#161616] p-6">
-          <div className="flex items-center gap-2 text-[13px] font-semibold text-[#D4D4D4]">
-            <span className="inline-block w-[6px] h-[6px] bg-[#F8F8F2]" />
-            dev<span className="font-normal text-[#6C7280]">·</span>review
+        <div className="mt-6 border border-line bg-surface p-6">
+          <div className="flex items-center gap-2 text-[13px] font-semibold text-fg-strong">
+            <span className="inline-block w-[6px] h-[6px] bg-fg" />
+            dev<span className="font-normal text-dim">·</span>review
           </div>
-          <h1 className="mt-4 text-[15px] text-[#F8F8F2]">Sign in</h1>
-          <p className="mt-1 text-[#8A8F98] text-[11.5px] leading-[1.6]">
+          <h1 className="mt-4 text-[15px] text-fg">Sign in</h1>
+          <p className="mt-1 text-muted text-[11.5px] leading-[1.6]">
             Sign in to manage a Lite or Pro plan. Anonymous reviews don&apos;t
             require an account.
           </p>
@@ -39,7 +39,7 @@ export default function SignInPage() {
             <button
               type="button"
               onClick={() => signIn("github", { callbackUrl })}
-              className="w-full px-4 py-[10px] border border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12.5px] text-left inline-flex items-center gap-[10px]"
+              className="w-full px-4 py-[10px] border border-line bg-control hover:bg-control-hover text-fg text-[12.5px] text-left inline-flex items-center gap-[10px]"
             >
               <svg
                 viewBox="0 0 16 16"
@@ -56,10 +56,10 @@ export default function SignInPage() {
             <button
               type="button"
               onClick={() => signIn("google", { callbackUrl })}
-              className="w-full px-4 py-[10px] border border-[#2A2A2A] bg-[#1F1F1F] hover:bg-[#232323] text-[#F8F8F2] text-[12.5px] text-left inline-flex items-center gap-[10px]"
+              className="w-full px-4 py-[10px] border border-line bg-control hover:bg-control-hover text-fg text-[12.5px] text-left inline-flex items-center gap-[10px]"
             >
               <span
-                className="inline-block w-[14px] h-[14px] text-center font-semibold text-[#7AB7FF]"
+                className="inline-block w-[14px] h-[14px] text-center font-semibold text-dv-blue"
                 aria-hidden
               >
                 G
@@ -68,9 +68,9 @@ export default function SignInPage() {
             </button>
           </div>
 
-          <p className="mt-5 text-[#4A4D54] text-[11px] leading-[1.6]">
+          <p className="mt-5 text-dimmer text-[11px] leading-[1.6]">
             By signing in you agree to how we handle account data — see the{" "}
-            <Link href="/privacy" className="underline hover:text-[#B6BAC1]">
+            <Link href="/privacy" className="underline hover:text-fg-faded">
               privacy policy
             </Link>
             .
