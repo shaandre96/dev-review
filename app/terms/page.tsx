@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Em, Section } from "../_components/prose";
 
 export const metadata: Metadata = {
   title: "Terms — DevReview",
@@ -364,25 +365,4 @@ export default function TermsPage() {
       </div>
     </main>
   );
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mt-8">
-      <h2 className="text-[14px] font-semibold text-fg lowercase tracking-[0.02em]">
-        {title}
-      </h2>
-      <div className="mt-2">{children}</div>
-    </section>
-  );
-}
-
-function Em({ children }: { children: React.ReactNode }) {
-  return <span className="text-fg font-semibold">{children}</span>;
 }

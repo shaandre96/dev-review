@@ -206,6 +206,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Shared prose components
+
+**Changed**
+- `Section`, `Em`, `Code` extracted from `/privacy` and `/terms` into `app/_components/prose.tsx`; both pages now import them instead of redeclaring identical helpers.
+
 ### 2026-05-30 — Tailwind theme tokens
 
 **Changed**
