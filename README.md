@@ -224,6 +224,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Extract pane components from the terminal
+
+**Changed**
+- `app/review/page.tsx` shrunk further (from ~750 to ~590 lines) by extracting `TopBar`, `PrForm`, and `OutputPane` into `app/review/_components/`. The streaming state machine + the paste-tab editor surface stay in the page (the editor pane is intertwined with the model picker + tier state, planned for a follow-up if it pays off).
+
 ### 2026-05-30 — Extract leaf UI bits from the terminal
 
 **Changed**

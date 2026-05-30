@@ -8,33 +8,23 @@
  * that file for the full token list.
  */
 
-import Link from "next/link";
 import { useSession } from "next-auth/react";
-import {
-  type KeyboardEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { detectLang, type LangKey } from "@/lib/lang";
 import { parseSseFrame } from "@/lib/sse";
 import { type Effort, MODEL_PRICING, type ModelId, TIERS } from "@/lib/tiers";
-import { AuthControl } from "../_components/auth-control";
 import { SiteFooter } from "../_components/site-footer";
 import {
-  ChunkView,
-  ErrorBanner,
   GhostBtn,
   Kbd,
   PaneFoot,
   PaneHead,
   type ReviewChunk,
   type ReviewError,
-  StatusDot,
-  TabButton,
 } from "./_components/bits";
+import { OutputPane } from "./_components/output-pane";
+import { PrForm } from "./_components/pr-form";
+import { TopBar } from "./_components/top-bar";
 
 /* ---------------------------------------------------------------- types ---- */
 
@@ -468,39 +458,7 @@ export default function Page() {
       className="grid h-screen w-screen bg-bg text-fg font-mono text-[13px] leading-[1.55] overflow-hidden"
       style={{ gridTemplateRows: "44px 1fr 32px" }}
     >
-      {/* TOP BAR */}
-      <header className="grid grid-cols-[1fr_auto_1fr] items-center px-[14px] border-b border-line bg-bg">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-[13px] font-semibold text-fg-strong no-underline hover:text-fg"
-        >
-          <span className="inline-block w-[6px] h-[6px] bg-fg" />
-          dev<span className="font-normal text-dim">·</span>review
-        </Link>
-
-        <div
-          role="tablist"
-          aria-label="Input mode"
-          className="inline-flex items-center border border-line bg-surface"
-        >
-          <TabButton active={tab === "paste"} onClick={() => setTab("paste")}>
-            Paste code
-          </TabButton>
-          <span className="w-px self-stretch bg-line" aria-hidden />
-          <TabButton active={tab === "pr"} onClick={() => setTab("pr")}>
-            GitHub PR URL
-          </TabButton>
-        </div>
-
-        <div className="justify-self-end inline-flex items-center gap-3 text-dim text-[11.5px]">
-          <AuthControl />
-          <span className="w-px self-stretch bg-line my-1" aria-hidden />
-          <span className="inline-flex items-center gap-2">
-            <StatusDot reviewing={isReviewing} />
-            {isReviewing ? "reviewing…" : "idle"}
-          </span>
-        </div>
-      </header>
+      <TopBar tab={tab} onChangeTab={setTab} isReviewing={isReviewing} />
 
       {/* MAIN */}
       <main className="grid grid-cols-2 min-h-0">
@@ -579,87 +537,14 @@ export default function Page() {
               />
             </div>
           ) : (
-            <div className="flex flex-col gap-[14px] p-6 overflow-auto">
-              <div>
-                <div className="text-dim text-[11.5px] mb-[6px]">
-                  github pull request url
-                </div>
-                <div className="grid grid-cols-[1fr_auto] border border-line bg-bg">
-                  <input
-                    ref={prInputRef}
-                    value={prUrl}
-                    onChange={(e) => setPrUrl(e.target.value)}
-                    onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-                      if (e.key === "Enter") onFetchPr();
-                    }}
-                    placeholder="https://github.com/org/repo/pull/1234"
-                    className="px-3 py-[10px] bg-transparent text-fg text-[13px] outline-none placeholder-faint"
-                  />
-                  <button
-                    type="button"
-                    onClick={onFetchPr}
-                    className="px-[14px] border-l border-line bg-control hover:bg-control-hover text-fg text-[12px]"
-                  >
-                    Fetch diff
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-dim text-[11.5px] mb-[6px]">
-                  github token{" "}
-                  <span className="text-dimmer">
-                    — optional, only for private repos
-                  </span>
-                </div>
-                <input
-                  type="password"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-                    if (e.key === "Enter") onFetchPr();
-                  }}
-                  placeholder="ghp_…  (leave blank for public repos)"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  className="w-full px-3 py-[10px] border border-line bg-bg text-fg text-[13px] outline-none placeholder-faint"
-                />
-              </div>
-
-              {/* Privacy: token handling. */}
-              <div className="border-l-2 border-dv-amber pl-[10px] text-[11.5px] leading-[1.7] text-muted">
-                <div className="text-dv-amber font-semibold mb-[2px]">
-                  privacy
-                </div>
-                Your token is sent to our server only to fetch this diff from
-                GitHub, then discarded. It is never stored, logged, written to
-                your browser, or sent to the model. Prefer a fine-grained,
-                read-only, short-lived token.{" "}
-                <a
-                  href="/privacy"
-                  className="text-fg-faded underline hover:text-fg"
-                >
-                  Privacy policy →
-                </a>
-              </div>
-
-              {/* No-caching disclosure. */}
-              <div className="border-l-2 border-line pl-[10px] text-[11.5px] leading-[1.7] text-dim">
-                <div className="text-muted font-semibold mb-[2px]">
-                  heads up
-                </div>
-                Nothing is cached. Every run fetches a fresh diff and recomputes
-                the review from scratch, so it may take a few seconds and
-                repeating the same request won&apos;t return instantly.
-              </div>
-
-              <div className="text-dim text-[11.5px] leading-[1.7]">
-                DevReview fetches the PR&apos;s unified diff and reviews the
-                changed files, attributing each finding to its file.
-              </div>
-            </div>
+            <PrForm
+              prUrl={prUrl}
+              setPrUrl={setPrUrl}
+              token={token}
+              setToken={setToken}
+              onFetchPr={onFetchPr}
+              prInputRef={prInputRef}
+            />
           )}
 
           <PaneFoot>
@@ -671,58 +556,15 @@ export default function Page() {
           </PaneFoot>
         </section>
 
-        {/* RIGHT PANE */}
-        <section
-          className="bg-surface grid min-h-0 min-w-0"
-          style={{ gridTemplateRows: "36px 1fr 32px" }}
-        >
-          <PaneHead>
-            <span className="text-muted text-[11.5px] tracking-[0.02em] lowercase">
-              review output
-            </span>
-            <GhostBtn onClick={onCopy}>{copyLabel}</GhostBtn>
-          </PaneHead>
-
-          <div
-            ref={outputRef}
-            className="overflow-auto px-4 pt-[14px] pb-[18px] text-[13px] leading-[1.65] whitespace-pre-wrap break-words"
-          >
-            {chunks.length === 0 && !error ? (
-              <div className="text-dim text-[12.5px] leading-[1.8] space-y-1">
-                <div>
-                  <span className="text-dv-green">→</span> Paste a file in the
-                  left pane.
-                </div>
-                <div>
-                  <span className="text-dv-green">→</span> Press{" "}
-                  <span className="text-fg-soft">⌘ Enter</span> to start a
-                  review.
-                </div>
-                <div>
-                  <span className="text-dv-green">→</span> Output streams here
-                  line by line.
-                </div>
-                <div>
-                  <span className="text-dv-green">→</span> Nothing is cached —
-                  each review runs fresh, so give it a few seconds.
-                </div>
-              </div>
-            ) : (
-              <>
-                {chunks.map((c, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: review output is append-only and never reorders
-                  <ChunkView key={i} chunk={c} />
-                ))}
-                {error && <ErrorBanner error={error} />}
-              </>
-            )}
-          </div>
-
-          <PaneFoot>
-            <span className="text-dimmer text-[11px]">{elapsed}</span>
-            <GhostBtn onClick={startReview}>Re-run</GhostBtn>
-          </PaneFoot>
-        </section>
+        <OutputPane
+          chunks={chunks}
+          error={error}
+          elapsed={elapsed}
+          copyLabel={copyLabel}
+          outputRef={outputRef}
+          onCopy={onCopy}
+          onReRun={startReview}
+        />
       </main>
 
       <SiteFooter />
