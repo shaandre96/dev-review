@@ -224,6 +224,15 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — OG image + richer metadata
+
+**Added**
+- `app/opengraph-image.tsx` — dynamic OG image generated via `next/og` for shared links (1200×630, terminal-styled).
+- Layouts at `app/review/layout.tsx` and `app/signin/layout.tsx` so those routes carry their own title/description (client pages can't export metadata).
+
+**Changed**
+- Root layout sets a `%s · DevReview` title template, applicationName, authors, and openGraph/twitter card defaults. Per-page titles trimmed (e.g. "Privacy" → "Privacy · DevReview" via the template).
+
 ### 2026-05-30 — Refresh README architecture diagram
 
 **Changed**

@@ -12,9 +12,27 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DevReview — terminal AI code review",
+  title: {
+    default: "DevReview — terminal AI code review",
+    template: "%s · DevReview",
+  },
   description:
-    "Terminal-style AI code review tool. Paste code or a GitHub PR URL and get streamed, categorised feedback.",
+    "Terminal-style AI code review. Paste a function, file, or GitHub PR URL and get streamed, categorised feedback.",
+  applicationName: "DevReview",
+  authors: [{ name: "Andre Sha" }],
+  openGraph: {
+    type: "website",
+    siteName: "DevReview",
+    title: "DevReview — terminal AI code review",
+    description:
+      "Paste a function, file, or GitHub PR and get a structured, categorised review streamed back, powered by Claude.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DevReview — terminal AI code review",
+    description:
+      "Paste a function, file, or GitHub PR and get a structured, categorised review streamed back, powered by Claude.",
+  },
 };
 
 export default function RootLayout({

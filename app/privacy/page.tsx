@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Code, Em, Section } from "../_components/prose";
 
 export const metadata: Metadata = {
-  title: "Privacy — DevReview",
+  title: "Privacy",
   description:
     "What DevReview does with the code, diffs, tokens, and account data you provide.",
 };

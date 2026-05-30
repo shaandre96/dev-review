@@ -7,7 +7,7 @@ import { ChangePlanButton } from "./change-plan-button";
 import { DeleteAccountButton } from "./delete-button";
 
 export const metadata: Metadata = {
-  title: "Account — DevReview",
+  title: "Account",
 };
 
 export default async function AccountPage({

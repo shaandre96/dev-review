@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Em, Section } from "../_components/prose";
 
 export const metadata: Metadata = {
-  title: "Terms — DevReview",
+  title: "Terms",
   description:
     "Terms and conditions for using DevReview, the AI code-review service.",
 };
