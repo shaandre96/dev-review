@@ -69,9 +69,13 @@ export default function SignInPage() {
           </div>
 
           <p className="mt-5 text-dimmer text-[11px] leading-[1.6]">
-            By signing in you agree to how we handle account data — see the{" "}
+            By signing in you agree to our{" "}
+            <Link href="/terms" className="underline hover:text-fg-faded">
+              Terms &amp; Conditions
+            </Link>{" "}
+            and how we handle account data per the{" "}
             <Link href="/privacy" className="underline hover:text-fg-faded">
-              privacy policy
+              Privacy Policy
             </Link>
             .
           </p>

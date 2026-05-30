@@ -206,6 +206,14 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Terms in sign-in copy; robots.txt
+
+**Added**
+- `app/robots.ts` — allows `/`, `/review`, `/privacy`, `/terms`; disallows `/account`, `/signin`, `/api/*`.
+
+**Changed**
+- Sign-in agreement copy now references both the Terms & Conditions and the Privacy Policy.
+
 ### 2026-05-30 — Shared `<SiteFooter>` and prose components
 
 **Changed**
