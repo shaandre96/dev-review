@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
 import { getDb, schema } from "@/lib/db";
+import { getRedis } from "@/lib/redis";
 import { stripe, tierForPriceId } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -10,6 +11,10 @@ export const runtime = "nodejs";
  * subscription event we re-derive the user's tier/status from the live Stripe
  * object and write it to the `subscription` row matched by Stripe customer id
  * (created during checkout).
+ *
+ * Idempotent: each event.id is claimed in Redis with a 7-day TTL before
+ * processing, so Stripe redeliveries are no-ops. Falls back to an in-memory
+ * Set when Redis isn't configured (dev only — per-instance).
  */
 export async function POST(req: Request) {
   const signature = req.headers.get("stripe-signature");
@@ -26,6 +31,11 @@ export async function POST(req: Request) {
     return new Response("Invalid signature.", { status: 400 });
   }
 
+  if (!(await claimEvent(event.id))) {
+    // Already processed — Stripe redelivery or duplicate. Acknowledge.
+    return new Response(null, { status: 200 });
+  }
+
   if (
     event.type === "customer.subscription.created" ||
     event.type === "customer.subscription.updated" ||
@@ -35,6 +45,26 @@ export async function POST(req: Request) {
   }
 
   return new Response(null, { status: 200 });
+}
+
+const SEEN_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
+const memSeen = new Set<string>();
+
+/** Returns true if this is the first time we're seeing the event, false if dup. */
+async function claimEvent(eventId: string): Promise<boolean> {
+  const r = getRedis();
+  if (r) {
+    const result = await r.set(`stripe:event:${eventId}`, "1", {
+      nx: true,
+      ex: SEEN_TTL_SECONDS,
+    });
+    return result === "OK";
+  }
+  if (memSeen.has(eventId)) return false;
+  memSeen.add(eventId);
+  // Best-effort bound; prevents unbounded growth in long-lived dev processes.
+  if (memSeen.size > 10_000) memSeen.clear();
+  return true;
 }
 
 async function applySubscription(sub: Stripe.Subscription) {

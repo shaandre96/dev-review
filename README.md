@@ -206,6 +206,15 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Webhook idempotency + shared Redis client
+
+**Added**
+- `lib/redis.ts` — single lazy Upstash client used by rate limiting, usage metering, and the Stripe webhook (previously duplicated three times).
+- The Stripe webhook now claims each `event.id` in Redis with a 7-day TTL before processing (`SET NX EX`); redeliveries are no-ops. In-memory fallback when Redis isn't configured.
+
+**Changed**
+- `tsconfig.json` enables `allowImportingTsExtensions` so `lib/*.ts` can import sibling `./redis.ts` (needed for node:test runs).
+
 ### 2026-05-30 — Terms in sign-in copy; robots.txt
 
 **Added**

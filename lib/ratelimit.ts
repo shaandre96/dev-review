@@ -18,7 +18,9 @@
  * pure helpers (clientIp, MemoryWindow, time helpers) run under `node --test`.
  */
 
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+// relative import keeps lib/ratelimit.ts importable from node:test
+import { getRedis } from "./redis.ts";
 
 const PER_MINUTE = toPositiveInt(process.env.RATE_LIMIT_PER_MINUTE, 1);
 const PER_DAY = toPositiveInt(process.env.RATE_LIMIT_PER_DAY, 5);
@@ -84,18 +86,7 @@ export class MemoryWindow {
   }
 }
 
-let _redis: Redis | null = null;
 let _warned = false;
-function redis(): Redis | null {
-  if (_redis) return _redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (url && token) {
-    _redis = new Redis({ url, token });
-    return _redis;
-  }
-  return null;
-}
 
 // Per-instance fallback windows (only used when Redis is absent).
 const memMinute = new MemoryWindow(PER_MINUTE, 60_000);
@@ -143,7 +134,7 @@ export async function enforceReviewLimits(
   headers: Headers,
 ): Promise<RateDecision> {
   const ip = clientIp(headers);
-  const r = redis();
+  const r = getRedis();
 
   if (r) {
     const day = utcDateKey();
