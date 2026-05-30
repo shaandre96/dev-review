@@ -224,6 +224,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Extract the input pane from the terminal
+
+**Changed**
+- Lifted the whole left pane (language badge + model/effort picker, paste editor *or* PR form, line/char counter + Clear) into `app/review/_components/input-pane.tsx`. The main render in `app/review/page.tsx` is now `TopBar → InputPane + OutputPane → SiteFooter` — every large JSX block has its own file. Page now ~510 lines (was ~590).
+
 ### 2026-05-30 — Extract pane components from the terminal
 
 **Changed**

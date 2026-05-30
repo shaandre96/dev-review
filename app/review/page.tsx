@@ -12,18 +12,11 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { detectLang, type LangKey } from "@/lib/lang";
 import { parseSseFrame } from "@/lib/sse";
-import { type Effort, MODEL_PRICING, type ModelId, TIERS } from "@/lib/tiers";
+import { type Effort, type ModelId, TIERS } from "@/lib/tiers";
 import { SiteFooter } from "../_components/site-footer";
-import {
-  GhostBtn,
-  Kbd,
-  PaneFoot,
-  PaneHead,
-  type ReviewChunk,
-  type ReviewError,
-} from "./_components/bits";
+import type { ReviewChunk, ReviewError } from "./_components/bits";
+import { InputPane } from "./_components/input-pane";
 import { OutputPane } from "./_components/output-pane";
-import { PrForm } from "./_components/pr-form";
 import { TopBar } from "./_components/top-bar";
 
 /* ---------------------------------------------------------------- types ---- */
@@ -462,99 +455,30 @@ export default function Page() {
 
       {/* MAIN */}
       <main className="grid grid-cols-2 min-h-0">
-        {/* LEFT PANE */}
-        <section
-          className="bg-surface grid min-h-0 min-w-0 border-r border-line"
-          style={{ gridTemplateRows: "36px 1fr 32px" }}
-        >
-          <PaneHead>
-            <span className="inline-flex items-center gap-2 min-w-0">
-              <span
-                className={`inline-flex items-center px-2 py-[2px] rounded-[2px] text-[11px] tracking-[0.02em] border ${langBadge.cls}`}
-              >
-                {langBadge.label}
-              </span>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value as ModelId)}
-                disabled={tier.allowedModels.length <= 1}
-                title="Model"
-                className="bg-bg border border-line text-fg-soft text-[11px] px-1 py-[2px] outline-none disabled:opacity-60"
-              >
-                {tier.allowedModels.map((m) => (
-                  <option key={m} value={m}>
-                    {MODEL_PRICING[m].label}
-                  </option>
-                ))}
-              </select>
-              {tier.effortChoice ? (
-                <select
-                  value={effort}
-                  onChange={(e) => setEffort(e.target.value as Effort)}
-                  title="Effort"
-                  className="bg-bg border border-line text-fg-soft text-[11px] px-1 py-[2px] outline-none"
-                >
-                  {(["low", "medium", "high", "xhigh"] as const).map((ef) => (
-                    <option key={ef} value={ef}>
-                      {ef}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <span className="text-dimmer text-[11px]">{effort}</span>
-              )}
-            </span>
-            <span className="text-dim text-[11.5px] whitespace-nowrap">
-              <Kbd>⌘</Kbd>
-              <Kbd>↵</Kbd>
-              <span className="ml-1">to review</span>
-            </span>
-          </PaneHead>
-
-          {tab === "paste" ? (
-            <div
-              className="grid min-h-0 overflow-hidden"
-              style={{ gridTemplateColumns: "48px 1fr" }}
-            >
-              <div
-                ref={gutterRef}
-                className="bg-surface border-r border-line-soft text-[#3F4148] text-[12px] text-right pr-2 pt-[10px] select-none overflow-hidden whitespace-pre leading-[1.55]"
-              >
-                {gutterText}
-              </div>
-              <textarea
-                ref={codeRef}
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                onScroll={onEditorScroll}
-                spellCheck={false}
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                placeholder="// Paste a function, file, or diff…"
-                className="w-full h-full bg-transparent text-fg font-mono text-[13px] leading-[1.55] resize-none border-0 outline-none whitespace-pre overflow-auto px-3 pt-[10px] pb-6 placeholder-faint"
-                style={{ tabSize: 2, caretColor: "#50FA7B" }}
-              />
-            </div>
-          ) : (
-            <PrForm
-              prUrl={prUrl}
-              setPrUrl={setPrUrl}
-              token={token}
-              setToken={setToken}
-              onFetchPr={onFetchPr}
-              prInputRef={prInputRef}
-            />
-          )}
-
-          <PaneFoot>
-            <span className="text-dimmer text-[11px]">
-              {lineCount} line{lineCount === 1 ? "" : "s"} · {charCount} char
-              {charCount === 1 ? "" : "s"}
-            </span>
-            <GhostBtn onClick={onClear}>Clear</GhostBtn>
-          </PaneFoot>
-        </section>
+        <InputPane
+          tab={tab}
+          tier={tier}
+          model={model}
+          setModel={setModel}
+          effort={effort}
+          setEffort={setEffort}
+          langBadge={langBadge}
+          code={code}
+          setCode={setCode}
+          codeRef={codeRef}
+          gutterRef={gutterRef}
+          gutterText={gutterText}
+          onEditorScroll={onEditorScroll}
+          prUrl={prUrl}
+          setPrUrl={setPrUrl}
+          token={token}
+          setToken={setToken}
+          onFetchPr={onFetchPr}
+          prInputRef={prInputRef}
+          lineCount={lineCount}
+          charCount={charCount}
+          onClear={onClear}
+        />
 
         <OutputPane
           chunks={chunks}
