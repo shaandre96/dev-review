@@ -188,7 +188,9 @@ export default function PrivacyPage() {
             Anonymous use leaves nothing to delete beyond transient rate-limit
             counters that expire on their own. If you have an account, deleting
             it from the <Em>Account</Em> page removes your profile, login
-            connections, session, and subscription record; usage rows are
+            connections, session, and subscription record. Any active paid
+            subscription is also cancelled with Stripe and the linked Stripe
+            customer is removed, so billing stops immediately. Usage rows are
             anonymised. Deletion is immediate and cannot be undone.
           </p>
         </Section>

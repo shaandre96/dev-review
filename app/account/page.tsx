@@ -105,7 +105,9 @@ export default async function AccountPage({
           </h2>
           <p className="mt-1 mb-3 text-[#8A8F98] text-[11.5px] leading-[1.7]">
             Deleting your account removes your profile, login connections, and
-            subscription record. This cannot be undone.
+            subscription record, cancels any active paid plan with Stripe so you
+            stop being billed, and removes you from Stripe. This cannot be
+            undone.
           </p>
           <DeleteAccountButton />
         </section>

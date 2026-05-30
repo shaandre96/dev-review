@@ -29,8 +29,7 @@ export default function TermsPage() {
 
         <p className="mt-6 text-[#C8CCD2]">
           DevReview is a code-review tool operated by Andre Sha (ABN{" "}
-          {/* TODO: replace [your ABN] with the registered ABN before publishing */}
-          <Em>[your ABN]</Em>), a sole trader based in Victoria, Australia
+          <Em>53 858 093 095</Em>), a sole trader based in Victoria, Australia
           (&quot;DevReview&quot;, &quot;we&quot;, &quot;us&quot;). These terms
           govern your use of the website and service. By using DevReview —
           anonymously or signed in — you agree to them. If you don&apos;t agree,
@@ -322,6 +321,13 @@ export default function TermsPage() {
             including content rights, disclaimers, liability limits, and
             indemnity — continue to apply.
           </p>
+          <p className="mt-3 text-[#C8CCD2]">
+            If you can&apos;t delete your account through the Account page — for
+            example because of an outage at Stripe or our database — please
+            contact us using the details below and we will action the deletion
+            (including cancelling any active paid subscription) manually, as
+            soon as reasonably practicable.
+          </p>
         </Section>
 
         <Section title="Privacy">
@@ -349,9 +355,7 @@ export default function TermsPage() {
           <p className="text-[#C8CCD2]">
             These terms are governed by the laws of Victoria, Australia, and you
             submit to the non-exclusive jurisdiction of its courts. Questions
-            about these terms can be directed to{" "}
-            {/* TODO: replace [your contact email] with the operator's contact email before publishing */}
-            <Em>[your contact email]</Em>.
+            about these terms can be directed to <Em>andre@kohastudio.dev</Em>.
           </p>
         </Section>
 

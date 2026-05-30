@@ -206,6 +206,16 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Cancel Stripe before account deletion (+ contingency)
+
+**Fixed**
+- `DELETE /api/account` now tears down Stripe before removing the local user: the linked Stripe customer is deleted (which also cancels any active subscription), so billing stops immediately and the user's data is removed from Stripe. Idempotent against an already-gone customer; aborts before the DB delete on any other failure so the user can retry cleanly.
+- Privacy "Deleting your data" and the account-page danger zone now spell out that any active paid subscription is cancelled and the Stripe customer is removed.
+
+**Added (contingency for self-serve failures)**
+- The route returns a structured error (`billing_cleanup_failed` 502 / `delete_failed` 500) with a user-readable `message`. The Delete-account button shows that message and surfaces a "Contact details" link to `/terms`.
+- Terms "Suspension and termination" now states that if self-serve deletion fails (e.g. Stripe or DB outage), the user can contact us and we'll action the deletion — including cancelling any active paid subscription — manually.
+
 ### 2026-05-30 — Terms & Conditions; privacy framed as a commercial service
 
 **Added**
