@@ -23,7 +23,7 @@ import {
   type PrRef,
   parsePrUrl,
 } from "@/lib/github";
-import { enforceReviewLimits } from "@/lib/ratelimit";
+import { enforceReviewLimits, enforceUserMinuteLimit } from "@/lib/ratelimit";
 import {
   type Effort,
   estimateReviewCostUsd,
@@ -145,6 +145,12 @@ export async function POST(req: NextRequest) {
       });
     }
   } else if (userId) {
+    const minute = await enforceUserMinuteLimit(userId, tier.perMinute);
+    if (!minute.ok) {
+      return jsonError(minute.status, minute.code, minute.message, {
+        "retry-after": String(minute.retryAfter),
+      });
+    }
     const used = await creditsUsedThisMonth(userId);
     const estimate = usdToCredits(estimateReviewCostUsd(model, effort));
     if (used + estimate > monthlyCredits(tier)) {

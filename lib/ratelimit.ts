@@ -175,3 +175,28 @@ function toPositiveInt(value: string | undefined, fallback: number): number {
   const n = Number(value);
   return Number.isInteger(n) && n > 0 ? n : fallback;
 }
+
+/**
+ * Per-user-per-minute limit for paid tiers. Free is governed by
+ * enforceReviewLimits (IP-based). Returns ok in dev when Redis isn't
+ * configured — paid users are bounded by their monthly credit budget there.
+ */
+export async function enforceUserMinuteLimit(
+  userId: string,
+  perMinute: number,
+): Promise<RateDecision> {
+  if (perMinute <= 0) return { ok: true };
+  const r = getRedis();
+  if (!r) return { ok: true };
+  const count = await redisHit(r, `rl:user-min:${userId}`, 60);
+  if (count > perMinute) {
+    return {
+      ok: false,
+      status: 429,
+      code: "rate_limited",
+      message: `Rate limit reached (${perMinute}/min). Try again in a moment.`,
+      retryAfter: 60,
+    };
+  }
+  return { ok: true };
+}

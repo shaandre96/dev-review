@@ -206,6 +206,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Per-user per-minute limit on paid tiers
+
+**Added**
+- `enforceUserMinuteLimit` in `lib/ratelimit.ts`, wired into `/api/review`'s paid branch. Lite gets 5/min, Pro gets 10/min (from `TIERS[*].perMinute`). Returns `429 rate_limited` with `Retry-After`. No-op in dev when Redis isn't configured (credit budget remains the primary gate).
+
 ### 2026-05-30 — Webhook idempotency + shared Redis client
 
 **Added**
