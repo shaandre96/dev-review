@@ -224,6 +224,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Security headers (CSP + friends)
+
+**Added**
+- `next.config.ts` now sets `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, and `Permissions-Policy` on every route. CSP allows `self`, Vercel Analytics, and Google/GitHub avatars; `unsafe-inline` is kept on script/style (tightening to nonces is a future task).
+
 ### 2026-05-30 — Styled error + 404 pages
 
 **Added**
