@@ -206,6 +206,15 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Terms & Conditions; privacy framed as a commercial service
+
+**Added**
+- `/terms` — full Terms & Conditions (Andre Sha, sole trader, Victoria, Australia), matching the privacy page's component pattern and plain-English voice. `[your ABN]` and `[your contact email]` left as visible placeholders with `TODO` comments.
+- Footer links to Terms on the landing and the terminal pages; `/terms` and `/privacy` cross-link each other.
+
+**Changed**
+- Privacy page now frames DevReview as a live commercial service operated by Andre Sha (the footer line and intro). No data-practice content was changed — this is purely a framing fix to align with the new commercial terms.
+
 ### 2026-05-30 — Change plan from the account page
 
 **Added**

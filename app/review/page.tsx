@@ -778,6 +778,13 @@ export default function Page() {
           Powered by Claude
           <span className="text-[#2A2A2A]">·</span>
           <a
+            href="/terms"
+            className="text-[#6C7280] hover:text-[#F8F8F2] transition-colors no-underline"
+          >
+            Terms
+          </a>
+          <span className="text-[#2A2A2A]">·</span>
+          <a
             href="/privacy"
             className="text-[#6C7280] hover:text-[#F8F8F2] transition-colors no-underline"
           >

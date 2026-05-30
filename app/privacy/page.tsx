@@ -28,12 +28,16 @@ export default function PrivacyPage() {
         </p>
 
         <p className="mt-6 text-[#C8CCD2]">
-          DevReview is a code-review tool: you paste a snippet or point it at a
-          GitHub pull request and it streams back an AI-generated review. You
-          can use it anonymously, or sign in to subscribe to a paid plan. This
-          page describes exactly what the application does with what you
-          provide. It reflects the behaviour of the source code, not
-          boilerplate.
+          DevReview is a commercial code-review service operated by Andre Sha.
+          You paste a snippet or point it at a GitHub pull request and it
+          streams back an AI-generated review. You can use it anonymously, or
+          sign in to subscribe to a paid plan. This page describes exactly what
+          the service does with what you provide; it reflects the live service,
+          not boilerplate. The legal terms are in our{" "}
+          <Link href="/terms" className="underline hover:text-[#F8F8F2]">
+            Terms &amp; Conditions
+          </Link>
+          .
         </p>
 
         <Section title="The short version">
@@ -206,7 +210,8 @@ export default function PrivacyPage() {
         </Section>
 
         <p className="mt-10 text-[#4A4D54] text-[11px]">
-          This is a personal portfolio project, not a commercial service.
+          DevReview is operated as a commercial service by Andre Sha (sole
+          trader), Victoria, Australia.
         </p>
       </div>
     </main>

@@ -161,6 +161,12 @@ export default function LandingPage() {
         <span>Powered by Claude</span>
         <span className="inline-flex items-center gap-4">
           <Link
+            href="/terms"
+            className="hover:text-[#F8F8F2] no-underline text-[#6C7280]"
+          >
+            Terms
+          </Link>
+          <Link
             href="/privacy"
             className="hover:text-[#F8F8F2] no-underline text-[#6C7280]"
           >
