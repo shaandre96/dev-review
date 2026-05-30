@@ -31,7 +31,15 @@ export default async function AccountPage({
           ← back to dev·review
         </Link>
 
-        <h1 className="mt-6 text-[20px] font-semibold">Account</h1>
+        <div className="mt-6 flex items-center justify-between gap-4">
+          <h1 className="text-[20px] font-semibold">Account</h1>
+          <Link
+            href="/review"
+            className="inline-flex items-center px-4 py-[8px] border border-[#50FA7B] bg-[rgba(80,250,123,0.08)] text-[#50FA7B] text-[12.5px] no-underline hover:bg-[rgba(80,250,123,0.14)]"
+          >
+            Open the terminal →
+          </Link>
+        </div>
 
         {status === "subscribed" && (
           <p className="mt-4 border-l-2 border-[#50FA7B] pl-3 py-1 text-[#50FA7B] text-[11.5px]">

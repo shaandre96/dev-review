@@ -206,6 +206,12 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Drop straight into the terminal after subscribing
+
+**Changed**
+- Stripe Checkout `success_url` now sends users to `/review?welcome=subscribed` instead of the account page, so paid users immediately get to use what they paid for.
+- `/account` gains an always-visible "Open the terminal →" CTA in the header so anyone arriving there has a one-click path back to the tool.
+
 ### 2026-05-30 — One-click checkout sign-in
 
 **Fixed**

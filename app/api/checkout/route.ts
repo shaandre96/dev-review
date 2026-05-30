@@ -64,7 +64,7 @@ export async function GET(req: Request) {
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
     client_reference_id: userId,
-    success_url: `${url.origin}/account?status=subscribed`,
+    success_url: `${url.origin}/review?welcome=subscribed`,
     cancel_url: `${url.origin}/?status=cancelled#pricing`,
   });
 
