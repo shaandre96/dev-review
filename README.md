@@ -224,6 +224,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 
 ## Changelog
 
+### 2026-05-30 — Extract leaf UI bits from the terminal
+
+**Changed**
+- `app/review/page.tsx` shrunk from ~1000 to ~750 lines. The leaf UI components (`TabButton`, `StatusDot`, `PaneHead`, `PaneFoot`, `GhostBtn`, `Kbd`, `ChunkView`, `ErrorBanner`) plus the `Tag`/`ReviewChunk`/`ReviewError` types and `renderBody` helper now live in `app/review/_components/bits.tsx`. The streaming state machine + main JSX stay in the page for now; the bigger pane-level extractions are still pending.
+
 ### 2026-05-30 — Security headers (CSP + friends)
 
 **Added**
