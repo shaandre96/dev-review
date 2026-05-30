@@ -91,21 +91,39 @@ It's a deliberate counterpoint to a warmer companion project of mine. Same desig
 ## Architecture
 
 ```
-┌─────────────────────────────┐    POST /api/review     ┌──────────────────────┐
-│ Client (app/page.tsx)       │ ──────────────────────▶ │ Route handler        │
-│  - textarea + gutter        │   { code, language }    │  app/api/review/     │
-│  - language detection       │                         │    route.ts          │
-│  - SSE event consumer       │ ◀────────────────────── │                      │
-│  - categorised renderer     │   text/event-stream     │  Anthropic.messages  │
-└─────────────────────────────┘                         │    .stream({ ... })  │
-                                                        └──────────────────────┘
+┌───────────────────────────────────────────────────────────────────────┐
+│ Browser                                                                │
+│   /         marketing + pricing cards                                  │
+│   /review   terminal: editor + model picker + SSE consumer             │
+│   /account  plan management, change/cancel, account deletion           │
+└──────────┬─────────────────────────────────────────────────┬──────────┘
+           │ POST /api/review                                │ /api/{auth,checkout,
+           ▼                                                 ▼  portal,subscription,account}
+┌───────────────────────────────────────────────────────────────────────┐
+│ Next route handlers (Node runtime on Vercel)                           │
+│   - auth() resolves tier from the subscription table                   │
+│   - validates model/effort server-side against the caller's tier       │
+│   - gates: anon → IP rate limits + global daily cap                    │
+│            paid → per-user/minute + monthly credit budget              │
+│   - streams the review from Anthropic, meters real token usage         │
+│   - Stripe webhook is signature-verified and event-id idempotent       │
+└──┬────────────────┬──────────────────────┬────────────────────┬───────┘
+   ▼                ▼                      ▼                    ▼
+┌──────────┐  ┌────────────┐  ┌────────────────────────┐  ┌──────────┐
+│ Anthropic│  │ Neon (PG)  │  │ Upstash Redis           │  │  Stripe  │
+│ streamed │  │  users     │  │  rate counters (IP+user)│  │ Checkout │
+│ tool-use │  │  accounts  │  │  monthly credit ledger  │  │  Portal  │
+│ reviews  │  │  sessions  │  │  Stripe event dedup     │  │  Webhook │
+│          │  │  subscript.│  │                         │  └──────────┘
+│          │  │  usage     │  │                         │
+└──────────┘  └────────────┘  └─────────────────────────┘
 ```
 
-Events the route emits (and the client renders):
+The review endpoint emits Server-Sent Events the terminal renders directly:
 
 ```
 event: status   data: { "state": "reviewing" }
-event: chunk    data: { "kind": "header", "file": "UserAuthService.ts" }
+event: chunk    data: { "kind": "header", "file": "owner/repo #42 — 3 files" }
 event: chunk    data: { "kind": "item", "tag": "security", "line": 14, "body": "…" }
 event: chunk    data: { "kind": "summary", "issues": 2, "suggestions": 1, "positives": 1 }
 event: status   data: { "state": "idle" }
@@ -205,6 +223,11 @@ The terminal lives at `/review` (one client component, so the streaming state ma
 ---
 
 ## Changelog
+
+### 2026-05-30 — Refresh README architecture diagram
+
+**Changed**
+- Architecture section now reflects auth (Auth.js + Neon), the subscription/usage tables, Stripe checkout/portal/webhook, rate-limit/credit/dedup counters in Upstash, and the metering loop — instead of just the original review-only flow.
 
 ### 2026-05-30 — Per-user per-minute limit on paid tiers
 
